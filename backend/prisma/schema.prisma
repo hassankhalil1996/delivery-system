@@ -14,13 +14,16 @@ datasource db {
 
 
 model Business {
-  id        Int      @id @default(autoincrement())
-  name      String
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           Int       @id @default(autoincrement())
+  name         String
+  username     String?   @unique
+  passwordHash String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 
-  orders    Order[]
+  orders       Order[]
+  sessions     Session[]
 }
 
 enum OrderStatus {
@@ -52,4 +55,28 @@ model Order {
 
   @@index([businessId, createdAt])
   @@index([status])
+}
+
+model Admin {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+
+  sessions     Session[]
+}
+
+model Session {
+  id         String    @id
+  adminId    Int?
+  businessId Int?
+  createdAt  DateTime  @default(now())
+  expiresAt  DateTime
+
+  admin      Admin?    @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  business   Business? @relation(fields: [businessId], references: [id], onDelete: Cascade)
+
+  @@index([adminId])
+  @@index([businessId])
+  @@index([expiresAt])
 }
