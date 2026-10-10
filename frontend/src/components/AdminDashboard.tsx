@@ -1,3 +1,5 @@
+import BusinessCreateForm from "./BusinessCreateForm";
+
 type AdminDashboardProps = {
   username: string;
   onLogout: () => void;
@@ -21,6 +23,8 @@ export default function AdminDashboard({
       <main>
         <h2>Welcome, {username}</h2>
         <p>You are successfully logged in as an administrator.</p>
+
+        <BusinessCreateForm />
       </main>
     </div>
   );
