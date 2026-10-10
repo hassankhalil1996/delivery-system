@@ -1,19 +1,9 @@
-import express from "express";
-import cors from "cors";
+// src/server.ts
+
 import "dotenv/config";
+import app from "./app.js";
 
-const app = express();
-const PORT = 3000;
-
-app.use(cors());
-app.use(express.json());
-
-app.get("/health", (req, res) => {
-  res.json({
-    status: "OK",
-    message: "Delivery API is running"
-  });
-});
+const PORT = Number(process.env.PORT) || 3000;
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
