@@ -1,10 +1,12 @@
 
 .order-form-card {
+  width: 100%;
   max-width: 650px;
   background: white;
   padding: 28px;
   border-radius: 12px;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+  box-sizing: border-box;
 }
 
 .order-form-card h2 {
@@ -31,6 +33,7 @@
 }
 
 .order-form input,
+.order-form select,
 .order-form textarea {
   width: 100%;
   padding: 12px;
@@ -38,18 +41,14 @@
   border-radius: 8px;
   font: inherit;
   box-sizing: border-box;
+  background: white;
 }
 
 .order-form input:focus,
+.order-form select:focus,
 .order-form textarea:focus {
   outline: 2px solid #2563eb;
   border-color: transparent;
-}
-
-.order-form-row {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 16px;
 }
 
 .order-form button {
@@ -83,9 +82,5 @@
 @media (max-width: 500px) {
   .order-form-card {
     padding: 18px;
-  }
-
-  .order-form-row {
-    grid-template-columns: 1fr;
   }
 }

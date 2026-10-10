@@ -1,11 +1,12 @@
 
+export type DeliveryArea = "BUEINA" | "NUJEIDAT";
+
 export type CreateOrderInput = {
   customerName: string;
   customerPhone: string;
-  area: string;
+  area: DeliveryArea;
   address: string;
   orderPrice: number;
-  deliveryFee: number;
   prepMinutes: number;
   notes?: string;
 };
@@ -13,12 +14,15 @@ export type CreateOrderInput = {
 export type Order = CreateOrderInput & {
   id: number;
   businessId: number;
+  deliveryFee: string;
   status: string;
   isReady: boolean;
   createdAt: string;
 };
 
-export async function createOrder(input: CreateOrderInput): Promise<Order> {
+export async function createOrder(
+  input: CreateOrderInput
+): Promise<Order> {
   const response = await fetch("/orders", {
     method: "POST",
     headers: {

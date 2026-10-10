@@ -1,15 +1,17 @@
 
 import { useState, type FormEvent } from "react";
-import { createOrder } from "../api/order.api";
+import {
+  createOrder,
+  type DeliveryArea,
+} from "../api/order.api";
 import "./OrderCreateForm.css";
 
 export default function OrderCreateForm() {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
-  const [area, setArea] = useState("");
+  const [area, setArea] = useState<DeliveryArea | "">("");
   const [address, setAddress] = useState("");
   const [orderPrice, setOrderPrice] = useState("");
-  const [deliveryFee, setDeliveryFee] = useState("");
   const [prepMinutes, setPrepMinutes] = useState("");
   const [notes, setNotes] = useState("");
 
@@ -20,6 +22,11 @@ export default function OrderCreateForm() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
+    if (!area) {
+      setError("Please select a delivery area.");
+      return;
+    }
+
     setLoading(true);
     setError("");
     setSuccess("");
@@ -28,10 +35,9 @@ export default function OrderCreateForm() {
       const order = await createOrder({
         customerName: customerName.trim(),
         customerPhone: customerPhone.trim(),
-        area: area.trim(),
+        area,
         address: address.trim(),
         orderPrice: Number(orderPrice),
-        deliveryFee: Number(deliveryFee),
         prepMinutes: Number(prepMinutes),
         notes: notes.trim() || undefined,
       });
@@ -43,7 +49,6 @@ export default function OrderCreateForm() {
       setArea("");
       setAddress("");
       setOrderPrice("");
-      setDeliveryFee("");
       setPrepMinutes("");
       setNotes("");
     } catch (err) {
@@ -84,12 +89,17 @@ export default function OrderCreateForm() {
 
         <label>
           Delivery Area
-          <input
+          <select
             value={area}
-            onChange={(e) => setArea(e.target.value)}
+            onChange={(e) =>
+              setArea(e.target.value as DeliveryArea | "")
+            }
             required
-            placeholder="Nazareth"
-          />
+          >
+            <option value="">Select area</option>
+            <option value="BUEINA">Bu'eina</option>
+            <option value="NUJEIDAT">Nujeidat</option>
+          </select>
         </label>
 
         <label>
@@ -102,45 +112,36 @@ export default function OrderCreateForm() {
           />
         </label>
 
-        <div className="order-form-row">
-          <label>
-            Order Price (₪)
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={orderPrice}
-              onChange={(e) => setOrderPrice(e.target.value)}
-              required
-              placeholder="80"
-            />
-          </label>
-
-          <label>
-            Delivery Fee (₪)
-            <input
-              type="number"
-              min="0"
-              step="0.01"
-              value={deliveryFee}
-              onChange={(e) => setDeliveryFee(e.target.value)}
-              required
-              placeholder="20"
-            />
-          </label>
-        </div>
-
         <label>
-          Preparation Time (minutes)
+          Order Price (₪)
           <input
             type="number"
             min="0"
-            step="1"
+            step="0.01"
+            value={orderPrice}
+            onChange={(e) => setOrderPrice(e.target.value)}
+            required
+            placeholder="80"
+          />
+        </label>
+
+        <label>
+          Preparation Time (minutes)
+          <select
             value={prepMinutes}
             onChange={(e) => setPrepMinutes(e.target.value)}
             required
-            placeholder="25"
-          />
+          >
+            <option value="">Select preparation time</option>
+            {Array.from(
+              { length: 12 },
+              (_, i) => (i + 1) * 5
+            ).map((minutes) => (
+              <option key={minutes} value={minutes}>
+                {minutes} minutes
+              </option>
+            ))}
+          </select>
         </label>
 
         <label>
@@ -153,11 +154,22 @@ export default function OrderCreateForm() {
           />
         </label>
 
-        {error && <p className="order-error" role="alert">{error}</p>}
-        {success && <p className="order-success" role="status">{success}</p>}
+        {error && (
+          <p className="order-error" role="alert">
+            {error}
+          </p>
+        )}
+
+        {success && (
+          <p className="order-success" role="status">
+            {success}
+          </p>
+        )}
 
         <button type="submit" disabled={loading}>
-          {loading ? "Creating Order..." : "Create Delivery Order"}
+          {loading
+            ? "Creating Order..."
+            : "Create Delivery Order"}
         </button>
       </form>
     </section>
