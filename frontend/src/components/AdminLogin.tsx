@@ -1,4 +1,5 @@
 import { useState, type FormEvent } from "react";
+import { loginAdmin } from "../api/auth.api";
 
 type AdminLoginProps = {
   onLogin: () => void;
@@ -16,23 +17,12 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
     setLoading(true);
 
     try {
-      const response = await fetch("/auth/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ username, password }),
-      });
-
-      if (!response.ok) {
-        setError("Invalid username or password");
-        return;
-      }
-
+      await loginAdmin(username, password);
       onLogin();
-    } catch {
-      setError("Cannot connect to the server");
+    } catch (error) {
+      setError(
+        error instanceof Error ? error.message : "Login failed"
+      );
     } finally {
       setLoading(false);
     }
@@ -64,7 +54,11 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
           required
         />
 
-        {error && <div className="error-message" role="alert">{error}</div>}
+        {error && (
+          <div className="error-message" role="alert">
+            {error}
+          </div>
+        )}
 
         <button type="submit" disabled={loading}>
           {loading ? "Logging in..." : "Login"}

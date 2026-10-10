@@ -96,3 +96,29 @@
 .dashboard main {
   padding: 40px;
 }
+
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.header-actions button {
+  padding: 10px 20px;
+  background-color: #ef4444;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.header-actions button:hover {
+  background-color: #dc2626;
+}
+
+.header-actions button:active {
+  background-color: #b91c1c;
+}

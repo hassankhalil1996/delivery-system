@@ -1,37 +1,26 @@
 import { useEffect, useState } from "react";
 import AdminLogin from "./components/AdminLogin";
-import "./App.css";
+import AdminDashboard from "./components/AdminDashboard";
 
-type Admin = {
-  id: number;
-  username: string;
-  role: "ADMIN";
-};
+import {
+  getCurrentAdmin,
+  logoutAdmin,
+  type Admin,
+} from "./api/auth.api";
+import "./App.css";
 
 function App() {
   const [admin, setAdmin] = useState<Admin | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
   async function checkSession() {
     try {
-      const response = await fetch("/auth/me", {
-        credentials: "include",
-      });
-
-      if (!response.ok) {
-        setAdmin(null);
-        return;
-      }
-
-      const data = await response.json();
-
-      if (data.user?.role === "ADMIN") {
-        setAdmin(data.user);
-      } else {
-        setAdmin(null);
-      }
+      const user = await getCurrentAdmin();
+      setAdmin(user);
+      setError("");
     } catch {
-      setAdmin(null);
+      setError("Could not check your session.");
     } finally {
       setLoading(false);
     }
@@ -41,26 +30,33 @@ function App() {
     void checkSession();
   }, []);
 
+  async function handleLogout() {
+    try {
+      await logoutAdmin();
+      setAdmin(null);
+      setError("");
+    } catch {
+      setError("Logout failed. Please try again.");
+    }
+  }
+
   if (loading) {
     return <div className="loading-page">Loading...</div>;
   }
 
-  if (!admin) {
-    return <AdminLogin onLogin={() => void checkSession()} />;
-  }
-
   return (
-    <div className="dashboard">
-      <header className="dashboard-header">
-        <h1>Delivery System</h1>
-        <span>Admin Dashboard</span>
-      </header>
+    <>
+      {error && <div role="alert" className="error-message">{error}</div>}
 
-      <main>
-        <h2>Welcome, {admin.username}</h2>
-        <p>You are successfully logged in as an administrator.</p>
-      </main>
-    </div>
+      {admin ? (
+        <AdminDashboard
+          username={admin.username}
+          onLogout={() => void handleLogout()}
+        />
+      ) : (
+        <AdminLogin onLogin={() => void checkSession()} />
+      )}
+    </>
   );
 }
 
