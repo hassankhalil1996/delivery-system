@@ -2,7 +2,11 @@
 
 import express from "express";
 import cors from "cors";
+
+
 import businessRoutes from "./modules/businesses/business.routes.js";
+import orderRoutes from "./modules/orders/order.routes.js";
+
 
 const app = express();
 
@@ -17,5 +21,6 @@ app.get("/health", (req, res) => {
 });
 
 app.use("/businesses", businessRoutes);
+app.use("/orders", orderRoutes);
 
 export default app;
