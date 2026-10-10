@@ -1,6 +1,6 @@
 
 import type { Request, Response } from "express";
-import { createOrder } from "./order.service.js";
+import { createOrder, getAvailableOrders } from "./order.service.js";
 import { getCurrentUser } from "../auth/auth.service.js";
 
 const ALLOWED_AREAS = ["BUEINA", "NUJEIDAT"];
@@ -81,6 +81,24 @@ export async function postOrder(req: Request, res: Response) {
 
     res.status(500).json({
       error: "Failed to create order",
+    });
+  }
+}
+
+
+
+export async function getAvailableOrdersController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const orders = await getAvailableOrders();
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Failed to fetch available orders:", error);
+
+    res.status(500).json({
+      error: "Failed to fetch available orders",
     });
   }
 }

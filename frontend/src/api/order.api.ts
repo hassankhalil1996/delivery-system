@@ -40,3 +40,35 @@ export async function createOrder(
 
   return data as Order;
 }
+
+
+
+export type AvailableOrder = {
+  id: number;
+  customerName: string;
+  customerPhone: string;
+  area: string;
+  address: string;
+  orderPrice: string;
+  prepMinutes: number;
+  notes: string | null;
+  status: "PENDING";
+  isReady: boolean;
+  createdAt: string;
+  business: {
+    id: number;
+    name: string;
+  };
+};
+
+export async function getAvailableOrders(): Promise<AvailableOrder[]> {
+  const response = await fetch("/orders/available", {
+    credentials: "include",
+  });
+
+  if (!response.ok) {
+    throw new Error("Failed to load available deliveries");
+  }
+
+  return response.json();
+}

@@ -27,3 +27,35 @@ export async function createOrder(data: CreateOrderInput) {
     },
   });
 }
+
+
+export async function getAvailableOrders() {
+  return prisma.order.findMany({
+    where: {
+      status: "PENDING",
+      courierId: null,
+    },
+    select: {
+      id: true,
+      customerName: true,
+      customerPhone: true,
+      area: true,
+      address: true,
+      orderPrice: true,
+      prepMinutes: true,
+      notes: true,
+      status: true,
+      isReady: true,
+      createdAt: true,
+      business: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
