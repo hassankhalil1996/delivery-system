@@ -19,4 +19,37 @@ model Business {
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  orders    Order[]
+}
+
+enum OrderStatus {
+  PENDING
+  ACCEPTED
+  REJECTED
+  PICKED_UP
+  DELIVERED
+  CANCELED
+}
+
+model Order {
+  id            Int         @id @default(autoincrement())
+  businessId    Int
+  customerName  String
+  customerPhone String
+  area          String
+  address       String
+  orderPrice    Decimal     @db.Decimal(10, 2)
+  deliveryFee   Decimal     @db.Decimal(10, 2)
+  prepMinutes   Int
+  notes         String?
+  status        OrderStatus @default(PENDING)
+  isReady       Boolean     @default(false)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  business      Business    @relation(fields: [businessId], references: [id])
+
+  @@index([businessId, createdAt])
+  @@index([status])
 }
