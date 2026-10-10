@@ -2,6 +2,8 @@ import { randomBytes, createHash } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 import { verifyPassword } from "../../lib/password.js";
 
+import type { Request } from "express";
+
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
 
 export async function loginAdmin(username: string, password: string) {
@@ -42,5 +44,35 @@ export async function loginAdmin(username: string, password: string) {
       username: admin.username,
       role: "ADMIN" as const,
     },
+  };
+}
+
+
+export async function getCurrentUser(req: Request) {
+  const token = req.cookies?.session;
+
+  if (typeof token !== "string") {
+    return null;
+  }
+
+  const tokenHash = createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  const session = await prisma.session.findUnique({
+    where: { id: tokenHash },
+    include: {
+      admin: true,
+    },
+  });
+
+  if (!session || session.expiresAt <= new Date() || !session.admin) {
+    return null;
+  }
+
+  return {
+    id: session.admin.id,
+    username: session.admin.username,
+    role: "ADMIN" as const,
   };
 }

@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { loginAdmin } from "./auth.service.js";
+import { loginAdmin, getCurrentUser } from "./auth.service.js";
 
 export async function postLogin(req: Request, res: Response) {
   try {
@@ -42,6 +42,26 @@ export async function postLogin(req: Request, res: Response) {
     console.error(error);
     res.status(500).json({
       error: "Login failed",
+    });
+  }
+}
+
+export async function getMe(req: Request, res: Response) {
+  try {
+    const user = await getCurrentUser(req);
+
+    if (!user) {
+      res.status(401).json({
+        error: "Not authenticated",
+      });
+      return;
+    }
+
+    res.json({ user });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      error: "Authentication check failed",
     });
   }
 }
