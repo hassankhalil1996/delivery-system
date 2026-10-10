@@ -1,7 +1,10 @@
+
 import { useEffect, useState } from "react";
+
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
 import BusinessDashboard from "./components/BusinessDashboard";
+import CourierDashboard from "./components/CourierDashboard";
 
 import {
   getCurrentUser,
@@ -61,8 +64,13 @@ function App() {
           username={user.username}
           onLogout={() => void handleLogout()}
         />
-      ) : (
+      ) : user.role === "BUSINESS" ? (
         <BusinessDashboard
+          name={user.name}
+          onLogout={() => void handleLogout()}
+        />
+      ) : (
+        <CourierDashboard
           name={user.name}
           onLogout={() => void handleLogout()}
         />

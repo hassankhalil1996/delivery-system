@@ -1,3 +1,4 @@
+
 export type AuthUser =
   | {
       id: number;
@@ -9,6 +10,12 @@ export type AuthUser =
       username: string;
       name: string;
       role: "BUSINESS";
+    }
+  | {
+      id: number;
+      username: string;
+      name: string;
+      role: "COURIER";
     };
 
 export async function getCurrentUser(): Promise<AuthUser | null> {
