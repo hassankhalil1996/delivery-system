@@ -8,6 +8,7 @@ import authRoutes from "./modules/auth/auth.routes.js";
 import businessRoutes from "./modules/businesses/business.routes.js";
 import orderRoutes from "./modules/orders/order.routes.js";
 import courierRoutes from "./modules/couriers/courier.routes.js";
+import pricingRoutes from "./modules/pricing/pricing.routes.js";
 
 
 
@@ -32,7 +33,7 @@ app.use("/auth", authRoutes);
 app.use("/businesses", businessRoutes);
 app.use("/orders", orderRoutes);
 app.use("/couriers", courierRoutes);
-
+app.use("/pricing", pricingRoutes);
 
 
 

@@ -7,8 +7,9 @@ export default defineConfig({
     proxy: {
       "/auth": "http://localhost:3000",
       "/businesses": "http://localhost:3000",
-      "/orders": "http://localhost:3000",
       "/couriers": "http://localhost:3000",
+      "/orders": "http://localhost:3000",
+      "/pricing": "http://localhost:3000",
     },
   },
 });

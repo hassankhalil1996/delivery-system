@@ -94,3 +94,12 @@ model Session {
   @@index([courierId])
   @@index([expiresAt])
 }
+
+model DeliveryPricing {
+  id            Int      @id @default(autoincrement())
+  area          String   @unique
+  fee           Decimal  @db.Decimal(10, 2)
+  reason        String   @default("NORMAL")
+  reasonDetails String?
+  updatedAt     DateTime @updatedAt
+}
