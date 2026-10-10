@@ -5,18 +5,10 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
-      "/auth": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-      },
-      "/businesses": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-      },
-      "/orders": {
-        target: "http://localhost:3000",
-        changeOrigin: true,
-      },
+      "/auth": "http://localhost:3000",
+      "/businesses": "http://localhost:3000",
+      "/orders": "http://localhost:3000",
+      "/couriers": "http://localhost:3000",
     },
   },
 });

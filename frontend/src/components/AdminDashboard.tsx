@@ -1,4 +1,5 @@
 import BusinessCreateForm from "./BusinessCreateForm";
+import CourierCreateForm from "./CourierCreateForm";
 
 type AdminDashboardProps = {
   username: string;
@@ -25,6 +26,8 @@ export default function AdminDashboard({
         <p>You are successfully logged in as an administrator.</p>
 
         <BusinessCreateForm />
+
+        <CourierCreateForm />
       </main>
     </div>
   );

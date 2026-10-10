@@ -7,6 +7,7 @@ import cookieParser from "cookie-parser";
 import authRoutes from "./modules/auth/auth.routes.js";
 import businessRoutes from "./modules/businesses/business.routes.js";
 import orderRoutes from "./modules/orders/order.routes.js";
+import courierRoutes from "./modules/couriers/courier.routes.js";
 
 
 
@@ -30,6 +31,7 @@ app.get("/health", (req, res) => {
 app.use("/auth", authRoutes);
 app.use("/businesses", businessRoutes);
 app.use("/orders", orderRoutes);
+app.use("/couriers", courierRoutes);
 
 
 
