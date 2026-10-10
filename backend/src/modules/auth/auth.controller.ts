@@ -1,5 +1,5 @@
 import type { Request, Response } from "express";
-import { loginAdmin, getCurrentUser } from "./auth.service.js";
+import { loginAdmin, getCurrentUser, logout } from "./auth.service.js";
 
 export async function postLogin(req: Request, res: Response) {
   try {
@@ -63,5 +63,23 @@ export async function getMe(req: Request, res: Response) {
     res.status(500).json({
       error: "Authentication check failed",
     });
+  }
+}
+
+export async function postLogout(req: Request, res: Response) {
+  try {
+    await logout(req);
+
+    res.clearCookie("session", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+    });
+
+    res.json({ message: "Logout successful" });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Logout failed" });
   }
 }

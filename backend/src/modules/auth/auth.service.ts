@@ -2,6 +2,7 @@ import { randomBytes, createHash } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 import { verifyPassword } from "../../lib/password.js";
 
+
 import type { Request } from "express";
 
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
@@ -75,4 +76,19 @@ export async function getCurrentUser(req: Request) {
     username: session.admin.username,
     role: "ADMIN" as const,
   };
+}
+
+
+export async function logout(req: Request): Promise<void> {
+  const token = req.cookies?.session;
+
+  if (!token) return;
+
+  const sessionId = createHash("sha256")
+    .update(token)
+    .digest("hex");
+
+  await prisma.session.deleteMany({
+    where: { id: sessionId },
+  });
 }
