@@ -14,7 +14,12 @@ export type CreateOrderInput = {
 export type Order = CreateOrderInput & {
   id: number;
   businessId: number;
+
+  // Pricing is assigned by the backend
   deliveryFee: string;
+  deliveryFeeReason: string;
+  deliveryFeeReasonDetails: string | null;
+
   status: string;
   isReady: boolean;
   createdAt: string;
@@ -41,20 +46,29 @@ export async function createOrder(
   return data as Order;
 }
 
-
-
 export type AvailableOrder = {
   id: number;
+
   customerName: string;
   customerPhone: string;
-  area: string;
+
+  area: DeliveryArea;
   address: string;
+
   orderPrice: string;
+
+  // Saved pricing for this specific order
+  deliveryFee: string;
+  deliveryFeeReason: string;
+  deliveryFeeReasonDetails: string | null;
+
   prepMinutes: number;
   notes: string | null;
+
   status: "PENDING";
   isReady: boolean;
   createdAt: string;
+
   business: {
     id: number;
     name: string;
@@ -66,9 +80,13 @@ export async function getAvailableOrders(): Promise<AvailableOrder[]> {
     credentials: "include",
   });
 
+  const data = await response.json();
+
   if (!response.ok) {
-    throw new Error("Failed to load available deliveries");
+    throw new Error(
+      data.error || "Failed to load available deliveries"
+    );
   }
 
-  return response.json();
+  return data as AvailableOrder[];
 }

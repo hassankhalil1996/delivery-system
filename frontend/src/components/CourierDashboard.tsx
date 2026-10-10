@@ -1,5 +1,3 @@
-import "./CourierDashboard.css";
-
 
 import { useEffect, useState } from "react";
 
@@ -7,6 +5,10 @@ import {
   getAvailableOrders,
   type AvailableOrder,
 } from "../api/order.api";
+
+import DeliveryPrices, {
+  formatPricingReason,
+} from "./DeliveryPrices";
 
 import "./CourierDashboard.css";
 
@@ -25,7 +27,9 @@ export default function CourierDashboard({
 
   async function loadOrders() {
     try {
+      setLoading(true);
       setError("");
+
       const data = await getAvailableOrders();
       setOrders(data);
     } catch (err) {
@@ -57,6 +61,8 @@ export default function CourierDashboard({
         <h2>Welcome, {name}</h2>
         <p>View incoming delivery orders.</p>
 
+        <DeliveryPrices />
+
         <section className="available-orders">
           <div className="orders-heading">
             <h3>Available Deliveries ({orders.length})</h3>
@@ -65,8 +71,9 @@ export default function CourierDashboard({
               type="button"
               className="refresh-button"
               onClick={() => void loadOrders()}
+              disabled={loading}
             >
-              Refresh
+              {loading ? "Refreshing..." : "Refresh"}
             </button>
           </div>
 
@@ -86,6 +93,7 @@ export default function CourierDashboard({
                 <article className="delivery-card" key={order.id}>
                   <div className="delivery-card-header">
                     <h4>Order #{order.id}</h4>
+
                     <span className="delivery-status">
                       {order.status}
                     </span>
@@ -93,15 +101,18 @@ export default function CourierDashboard({
 
                   <div className="delivery-details">
                     <p>
-                      <strong>Business:</strong> {order.business.name}
+                      <strong>Business:</strong>{" "}
+                      {order.business.name}
                     </p>
 
                     <p>
-                      <strong>Customer:</strong> {order.customerName}
+                      <strong>Customer:</strong>{" "}
+                      {order.customerName}
                     </p>
 
                     <p>
-                      <strong>Phone:</strong> {order.customerPhone}
+                      <strong>Phone:</strong>{" "}
+                      {order.customerPhone}
                     </p>
 
                     <p>
@@ -114,20 +125,46 @@ export default function CourierDashboard({
                     </p>
 
                     <p>
-                      <strong>Address:</strong> {order.address}
+                      <strong>Address:</strong>{" "}
+                      {order.address}
                     </p>
 
                     <p>
-                      <strong>Order Price:</strong> ₪{order.orderPrice}
+                      <strong>Order Price:</strong>{" "}
+                      ₪{order.orderPrice}
                     </p>
 
+                    <div className="courier-delivery-fee">
+                      <p>
+                        <strong>Delivery Fee:</strong>{" "}
+                        {order.deliveryFee != null &&
+                        Number(order.deliveryFee) > 0
+                          ? `₪${order.deliveryFee}`
+                          : "Not priced"}
+                      </p>
+
+                      <p>
+                        <strong>Pricing Reason:</strong>{" "}
+                        {order.deliveryFee != null &&
+                        Number(order.deliveryFee) > 0 &&
+                        order.deliveryFeeReason
+                          ? formatPricingReason(
+                              order.deliveryFeeReason,
+                              order.deliveryFeeReasonDetails
+                            )
+                          : "Not available"}
+                      </p>
+                    </div>
+
                     <p>
-                      <strong>Preparation:</strong> {order.prepMinutes} min
+                      <strong>Preparation:</strong>{" "}
+                      {order.prepMinutes} min
                     </p>
 
                     {order.notes && (
                       <p>
-                        <strong>Notes:</strong> {order.notes}
+                        <strong>Notes:</strong>{" "}
+                        {order.notes}
                       </p>
                     )}
                   </div>
@@ -140,4 +177,3 @@ export default function CourierDashboard({
     </div>
   );
 }
-

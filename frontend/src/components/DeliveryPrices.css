@@ -1,0 +1,73 @@
+
+.delivery-prices {
+  margin: 24px 0;
+  padding: 24px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+}
+
+.delivery-prices-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+}
+
+.delivery-prices-header h2 {
+  margin: 0;
+  font-size: 21px;
+}
+
+.delivery-prices-header button {
+  padding: 10px 14px;
+  background: #2563eb;
+  color: white;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.delivery-prices-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.delivery-price-card {
+  padding: 20px;
+  border: 1px solid #dbeafe;
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.delivery-price-card h3 {
+  margin: 0 0 12px;
+  color: #334155;
+}
+
+.delivery-price-card strong {
+  font-size: 30px;
+  color: #2563eb;
+}
+
+.delivery-price-card p {
+  margin: 10px 0 0;
+  color: #64748b;
+}
+
+@media (max-width: 600px) {
+  .delivery-prices {
+    padding: 16px;
+  }
+
+  .delivery-prices-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .delivery-prices-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

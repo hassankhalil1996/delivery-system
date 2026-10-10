@@ -1,18 +1,21 @@
 
 import type { Request, Response } from "express";
-import { createOrder, getAvailableOrders } from "./order.service.js";
-import { getCurrentUser } from "../auth/auth.service.js";
 
-const ALLOWED_AREAS = ["BUEINA", "NUJEIDAT"];
+import {
+  createOrder,
+  getAvailableOrders,
+  PricingNotConfiguredError,
+} from "./order.service.js";
+
+import { getCurrentUser } from "../auth/auth.service.js";
+import { isValidArea } from "../pricing/pricing.service.js";
 
 export async function postOrder(req: Request, res: Response) {
   try {
     const user = await getCurrentUser(req);
 
     if (!user) {
-      res.status(401).json({
-        error: "Not authenticated",
-      });
+      res.status(401).json({ error: "Not authenticated" });
       return;
     }
 
@@ -42,15 +45,15 @@ export async function postOrder(req: Request, res: Response) {
     const validOrderPrice =
       typeof orderPrice === "number" &&
       Number.isFinite(orderPrice) &&
-      orderPrice >= 0;
+      orderPrice >= 0 &&
+      Number.isInteger(Number(orderPrice.toFixed(2)) * 100)
 
     if (
       typeof customerName !== "string" ||
       !customerName.trim() ||
       typeof customerPhone !== "string" ||
       !customerPhone.trim() ||
-      typeof area !== "string" ||
-      !ALLOWED_AREAS.includes(area) ||
+      !isValidArea(area) ||
       typeof address !== "string" ||
       !address.trim() ||
       !validOrderPrice ||
@@ -70,25 +73,26 @@ export async function postOrder(req: Request, res: Response) {
       area,
       address: address.trim(),
       orderPrice,
-      deliveryFee: 0,
       prepMinutes,
       notes: notes?.trim(),
     });
 
     res.status(201).json(order);
   } catch (error) {
-    console.error(error);
+    if (error instanceof PricingNotConfiguredError) {
+      res.status(409).json({ error: error.message });
+      return;
+    }
 
+    console.error("Failed to create order:", error);
     res.status(500).json({
       error: "Failed to create order",
     });
   }
 }
 
-
-
 export async function getAvailableOrdersController(
-  req: Request,
+  _req: Request,
   res: Response
 ) {
   try {
@@ -96,7 +100,6 @@ export async function getAvailableOrdersController(
     res.status(200).json(orders);
   } catch (error) {
     console.error("Failed to fetch available orders:", error);
-
     res.status(500).json({
       error: "Failed to fetch available orders",
     });

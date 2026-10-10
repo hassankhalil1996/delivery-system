@@ -1,9 +1,18 @@
 
-import { useState, type FormEvent } from "react";
+import { useEffect, useState, type FormEvent } from "react";
+
 import {
   createOrder,
   type DeliveryArea,
 } from "../api/order.api";
+
+import {
+  getPricing,
+  type DeliveryPricing,
+} from "../api/pricing.api";
+
+import { formatPricingReason } from "./DeliveryPrices";
+
 import "./OrderCreateForm.css";
 
 export default function OrderCreateForm() {
@@ -15,15 +24,50 @@ export default function OrderCreateForm() {
   const [prepMinutes, setPrepMinutes] = useState("");
   const [notes, setNotes] = useState("");
 
+  const [pricing, setPricing] = useState<DeliveryPricing[]>([]);
+  const [pricingLoading, setPricingLoading] = useState(true);
+  const [pricingError, setPricingError] = useState("");
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
+
+  async function loadPricing() {
+    setPricingLoading(true);
+    setPricingError("");
+
+    try {
+      const data = await getPricing();
+      setPricing(data);
+    } catch (err) {
+      setPricingError(
+        err instanceof Error
+          ? err.message
+          : "Could not load delivery prices"
+      );
+    } finally {
+      setPricingLoading(false);
+    }
+  }
+
+  useEffect(() => {
+    void loadPricing();
+  }, []);
+
+  const selectedPricing = pricing.find(
+    (item) => item.area === area
+  );
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (!area) {
       setError("Please select a delivery area.");
+      return;
+    }
+
+    if (!selectedPricing) {
+      setError("Delivery pricing is unavailable for this area.");
       return;
     }
 
@@ -42,7 +86,9 @@ export default function OrderCreateForm() {
         notes: notes.trim() || undefined,
       });
 
-      setSuccess(`Order #${order.id} created successfully!`);
+      setSuccess(
+        `Order #${order.id} created successfully! Delivery fee: ₪${order.deliveryFee}`
+      );
 
       setCustomerName("");
       setCustomerPhone("");
@@ -96,11 +142,42 @@ export default function OrderCreateForm() {
             }
             required
           >
-            <option value="">Select area</option>
+            <option value="">Select delivery area</option>
             <option value="BUEINA">Bu'eina</option>
             <option value="NUJEIDAT">Nujeidat</option>
           </select>
         </label>
+
+        {area && (
+          <div className="selected-delivery-price">
+            {pricingLoading ? (
+              <p>Loading delivery fee...</p>
+            ) : selectedPricing ? (
+              <>
+                <strong>
+                  Delivery Fee: ₪{selectedPricing.fee}
+                </strong>
+
+                <p>
+                  Reason:{" "}
+                  {formatPricingReason(
+                    selectedPricing.reason,
+                    selectedPricing.reasonDetails
+                  )}
+                </p>
+
+                <small>
+                  Fee is set by Admin and applied automatically.
+                </small>
+              </>
+            ) : (
+              <p>
+                {pricingError ||
+                  "Delivery price is not configured for this area."}
+              </p>
+            )}
+          </div>
+        )}
 
         <label>
           Delivery Address
@@ -133,9 +210,10 @@ export default function OrderCreateForm() {
             required
           >
             <option value="">Select preparation time</option>
+
             {Array.from(
               { length: 12 },
-              (_, i) => (i + 1) * 5
+              (_, index) => (index + 1) * 5
             ).map((minutes) => (
               <option key={minutes} value={minutes}>
                 {minutes} minutes
@@ -166,10 +244,11 @@ export default function OrderCreateForm() {
           </p>
         )}
 
-        <button type="submit" disabled={loading}>
-          {loading
-            ? "Creating Order..."
-            : "Create Delivery Order"}
+        <button
+          type="submit"
+          disabled={loading || pricingLoading || !selectedPricing}
+        >
+          {loading ? "Creating Order..." : "Create Delivery Order"}
         </button>
       </form>
     </section>

@@ -72,6 +72,9 @@ model Order {
   business      Business    @relation(fields: [businessId], references: [id])
   courier       Courier?    @relation(fields: [courierId], references: [id])
 
+  deliveryFeeReason        String  @default("NORMAL")
+  deliveryFeeReasonDetails String?
+
   @@index([businessId, createdAt])
   @@index([courierId])
   @@index([status])

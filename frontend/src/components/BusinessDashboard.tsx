@@ -1,5 +1,6 @@
 
 import OrderCreateForm from "./OrderCreateForm";
+import DeliveryPrices from "./DeliveryPrices";
 
 type BusinessDashboardProps = {
   name: string;
@@ -25,6 +26,8 @@ export default function BusinessDashboard({
         <h2>Welcome to {name}</h2>
         <p>Create and manage your delivery orders.</p>
 
+        <DeliveryPrices />
+        
         <OrderCreateForm />
       </main>
     </div>
