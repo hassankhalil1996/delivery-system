@@ -1,11 +1,13 @@
-// src/modules/businesses/business.routes.ts
-
 import { Router } from "express";
-import { getBusinesses, postBusiness, } from "./business.controller.js";
+import {
+  getBusinesses,
+  postBusiness,
+} from "./business.controller.js";
+import { requireAdmin } from "../auth/auth.middleware.js";
 
 const router = Router();
 
 router.get("/", getBusinesses);
-router.post("/", postBusiness);
+router.post("/", requireAdmin, postBusiness);
 
 export default router;
