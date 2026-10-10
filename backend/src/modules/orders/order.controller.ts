@@ -1,10 +1,20 @@
+
 import type { Request, Response } from "express";
 import { createOrder } from "./order.service.js";
+import { getCurrentUser } from "../auth/auth.service.js";
 
 export async function postOrder(req: Request, res: Response) {
   try {
+    const user = await getCurrentUser(req);
+
+    if (!user || user.role !== "BUSINESS") {
+      res.status(403).json({
+        error: "Business access required",
+      });
+      return;
+    }
+
     const {
-      businessId,
       customerName,
       customerPhone,
       area,
@@ -13,11 +23,9 @@ export async function postOrder(req: Request, res: Response) {
       deliveryFee,
       prepMinutes,
       notes,
-    } = req.body;
+    } = req.body ?? {};
 
     if (
-      !Number.isInteger(businessId) ||
-      businessId <= 0 ||
       typeof customerName !== "string" ||
       !customerName.trim() ||
       typeof customerPhone !== "string" ||
@@ -43,7 +51,7 @@ export async function postOrder(req: Request, res: Response) {
     }
 
     const order = await createOrder({
-      businessId,
+      businessId: user.id,
       customerName: customerName.trim(),
       customerPhone: customerPhone.trim(),
       area: area.trim(),

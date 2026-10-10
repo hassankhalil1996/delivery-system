@@ -1,3 +1,6 @@
+
+import OrderCreateForm from "./OrderCreateForm";
+
 type BusinessDashboardProps = {
   name: string;
   onLogout: () => void;
@@ -20,7 +23,9 @@ export default function BusinessDashboard({
 
       <main>
         <h2>Welcome to {name}</h2>
-        <p>You will be able to create delivery orders here.</p>
+        <p>Create and manage your delivery orders.</p>
+
+        <OrderCreateForm />
       </main>
     </div>
   );

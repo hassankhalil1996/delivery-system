@@ -1,0 +1,91 @@
+
+.order-form-card {
+  max-width: 650px;
+  background: white;
+  padding: 28px;
+  border-radius: 12px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
+}
+
+.order-form-card h2 {
+  margin: 0 0 8px;
+}
+
+.order-form-card > p {
+  color: #64748b;
+  margin-bottom: 24px;
+}
+
+.order-form {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.order-form label {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.order-form input,
+.order-form textarea {
+  width: 100%;
+  padding: 12px;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  font: inherit;
+  box-sizing: border-box;
+}
+
+.order-form input:focus,
+.order-form textarea:focus {
+  outline: 2px solid #2563eb;
+  border-color: transparent;
+}
+
+.order-form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.order-form button {
+  padding: 14px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.order-form button:hover {
+  background: #1d4ed8;
+}
+
+.order-form button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.order-error {
+  color: #dc2626;
+}
+
+.order-success {
+  color: #15803d;
+}
+
+@media (max-width: 500px) {
+  .order-form-card {
+    padding: 18px;
+  }
+
+  .order-form-row {
+    grid-template-columns: 1fr;
+  }
+}
