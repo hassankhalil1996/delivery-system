@@ -1,26 +1,54 @@
 import { randomBytes, createHash } from "node:crypto";
 import { prisma } from "../../lib/prisma.js";
 import { verifyPassword } from "../../lib/password.js";
-
-
 import type { Request } from "express";
 
 const SESSION_DURATION = 30 * 24 * 60 * 60 * 1000;
 
+// Login for both ADMIN and BUSINESS
 export async function loginAdmin(username: string, password: string) {
   const admin = await prisma.admin.findUnique({
     where: { username },
   });
 
-  if (!admin) return null;
+  const business = await prisma.business.findUnique({
+    where: { username },
+  });
 
-  const validPassword = await verifyPassword(
-    admin.passwordHash,
-    password
-  );
+  let user:
+    | { id: number; username: string; role: "ADMIN" }
+    | { id: number; username: string; name: string; role: "BUSINESS" }
+    | null = null;
 
-  if (!validPassword) return null;
+  // Check admin credentials
+  if (admin && await verifyPassword(admin.passwordHash, password)) {
+    user = {
+      id: admin.id,
+      username: admin.username,
+      role: "ADMIN",
+    };
+  }
 
+  // Check business credentials if admin login didn't succeed
+  if (
+    !user &&
+    business &&
+    business.isActive &&
+    business.passwordHash &&
+    business.username &&
+    await verifyPassword(business.passwordHash, password)
+  ) {
+    user = {
+      id: business.id,
+      username: business.username,
+      name: business.name,
+      role: "BUSINESS",
+    };
+  }
+
+  if (!user) return null;
+
+  // Create secure session
   const token = randomBytes(32).toString("hex");
 
   const tokenHash = createHash("sha256")
@@ -32,7 +60,8 @@ export async function loginAdmin(username: string, password: string) {
   await prisma.session.create({
     data: {
       id: tokenHash,
-      adminId: admin.id,
+      adminId: user.role === "ADMIN" ? user.id : null,
+      businessId: user.role === "BUSINESS" ? user.id : null,
       expiresAt,
     },
   });
@@ -40,15 +69,11 @@ export async function loginAdmin(username: string, password: string) {
   return {
     token,
     expiresAt,
-    admin: {
-      id: admin.id,
-      username: admin.username,
-      role: "ADMIN" as const,
-    },
+    admin: user, // Keep this property for compatibility with existing controller
   };
 }
 
-
+// Identify currently logged-in user
 export async function getCurrentUser(req: Request) {
   const token = req.cookies?.session;
 
@@ -64,25 +89,44 @@ export async function getCurrentUser(req: Request) {
     where: { id: tokenHash },
     include: {
       admin: true,
+      business: true,
     },
   });
 
-  if (!session || session.expiresAt <= new Date() || !session.admin) {
+  if (!session || session.expiresAt <= new Date()) {
     return null;
   }
 
-  return {
-    id: session.admin.id,
-    username: session.admin.username,
-    role: "ADMIN" as const,
-  };
+  if (session.admin && !session.business) {
+    return {
+      id: session.admin.id,
+      username: session.admin.username,
+      role: "ADMIN" as const,
+    };
+  }
+
+  if (
+    session.business &&
+    !session.admin &&
+    session.business.isActive &&
+    session.business.username
+  ) {
+    return {
+      id: session.business.id,
+      username: session.business.username,
+      name: session.business.name,
+      role: "BUSINESS" as const,
+    };
+  }
+
+  return null;
 }
 
-
+// Logout for both ADMIN and BUSINESS
 export async function logout(req: Request): Promise<void> {
   const token = req.cookies?.session;
 
-  if (!token) return;
+  if (typeof token !== "string") return;
 
   const sessionId = createHash("sha256")
     .update(token)

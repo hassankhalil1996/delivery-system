@@ -1,5 +1,5 @@
 import { useState, type FormEvent } from "react";
-import { loginAdmin } from "../api/auth.api";
+import { login } from "../api/auth.api";
 
 type AdminLoginProps = {
   onLogin: () => void;
@@ -17,7 +17,7 @@ export default function AdminLogin({ onLogin }: AdminLoginProps) {
     setLoading(true);
 
     try {
-      await loginAdmin(username, password);
+      await login(username, password);
       onLogin();
     } catch (error) {
       setError(

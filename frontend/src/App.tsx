@@ -1,23 +1,25 @@
 import { useEffect, useState } from "react";
 import AdminLogin from "./components/AdminLogin";
 import AdminDashboard from "./components/AdminDashboard";
+import BusinessDashboard from "./components/BusinessDashboard";
 
 import {
-  getCurrentAdmin,
-  logoutAdmin,
-  type Admin,
+  getCurrentUser,
+  logout,
+  type AuthUser,
 } from "./api/auth.api";
+
 import "./App.css";
 
 function App() {
-  const [admin, setAdmin] = useState<Admin | null>(null);
+  const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   async function checkSession() {
     try {
-      const user = await getCurrentAdmin();
-      setAdmin(user);
+      const currentUser = await getCurrentUser();
+      setUser(currentUser);
       setError("");
     } catch {
       setError("Could not check your session.");
@@ -32,8 +34,8 @@ function App() {
 
   async function handleLogout() {
     try {
-      await logoutAdmin();
-      setAdmin(null);
+      await logout();
+      setUser(null);
       setError("");
     } catch {
       setError("Logout failed. Please try again.");
@@ -46,15 +48,24 @@ function App() {
 
   return (
     <>
-      {error && <div role="alert" className="error-message">{error}</div>}
+      {error && (
+        <div className="error-message" role="alert">
+          {error}
+        </div>
+      )}
 
-      {admin ? (
+      {!user ? (
+        <AdminLogin onLogin={() => void checkSession()} />
+      ) : user.role === "ADMIN" ? (
         <AdminDashboard
-          username={admin.username}
+          username={user.username}
           onLogout={() => void handleLogout()}
         />
       ) : (
-        <AdminLogin onLogin={() => void checkSession()} />
+        <BusinessDashboard
+          name={user.name}
+          onLogout={() => void handleLogout()}
+        />
       )}
     </>
   );

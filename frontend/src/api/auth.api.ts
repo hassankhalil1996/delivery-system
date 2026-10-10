@@ -1,10 +1,17 @@
-export type Admin = {
-  id: number;
-  username: string;
-  role: "ADMIN";
-};
+export type AuthUser =
+  | {
+      id: number;
+      username: string;
+      role: "ADMIN";
+    }
+  | {
+      id: number;
+      username: string;
+      name: string;
+      role: "BUSINESS";
+    };
 
-export async function getCurrentAdmin(): Promise<Admin | null> {
+export async function getCurrentUser(): Promise<AuthUser | null> {
   const response = await fetch("/auth/me", {
     credentials: "include",
   });
@@ -13,10 +20,10 @@ export async function getCurrentAdmin(): Promise<Admin | null> {
   if (!response.ok) throw new Error("Failed to check session");
 
   const data = await response.json();
-  return data.user?.role === "ADMIN" ? data.user : null;
+  return data.user ?? null;
 }
 
-export async function loginAdmin(username: string, password: string) {
+export async function login(username: string, password: string) {
   const response = await fetch("/auth/login", {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -29,7 +36,7 @@ export async function loginAdmin(username: string, password: string) {
   }
 }
 
-export async function logoutAdmin() {
+export async function logout() {
   const response = await fetch("/auth/logout", {
     method: "POST",
     credentials: "include",
