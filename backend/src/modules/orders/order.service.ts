@@ -56,6 +56,9 @@ export async function getAvailableOrders() {
     where: {
       status: "PENDING",
       courierId: null,
+      createdAt: {
+      gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
+  },
     },
     select: {
       id: true,
@@ -129,9 +132,16 @@ export async function acceptOrder(
 
 
 export async function getCourierOrders(courierId: number) {
+  const threeDaysAgo = new Date(
+    Date.now() - 3 * 24 * 60 * 60 * 1000
+  );
+
   return prisma.order.findMany({
     where: {
       courierId,
+      createdAt: {
+        gte: threeDaysAgo,
+      },
     },
     include: {
       business: {
@@ -224,9 +234,16 @@ export async function deliverOrder(
 
 
 export async function getBusinessOrders(businessId: number) {
+  const threeDaysAgo = new Date(
+    Date.now() - 3 * 24 * 60 * 60 * 1000
+  );
+
   return prisma.order.findMany({
     where: {
       businessId,
+      createdAt: {
+        gte: threeDaysAgo,
+      },
     },
     include: {
       courier: {
