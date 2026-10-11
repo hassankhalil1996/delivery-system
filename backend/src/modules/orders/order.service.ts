@@ -221,3 +221,23 @@ export async function deliverOrder(
     },
   });
 }
+
+
+export async function getBusinessOrders(businessId: number) {
+  return prisma.order.findMany({
+    where: {
+      businessId,
+    },
+    include: {
+      courier: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}

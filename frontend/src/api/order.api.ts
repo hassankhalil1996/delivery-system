@@ -151,3 +151,40 @@ export async function completeDelivery(
     "Failed to complete delivery"
   );
 }
+
+
+
+export type BusinessOrder = {
+  id: number;
+  businessId: number;
+  courierId: number | null;
+  customerName: string;
+  customerPhone: string;
+  area: DeliveryArea;
+  address: string;
+  orderPrice: string;
+  deliveryFee: string;
+  deliveryFeeReason: string;
+  deliveryFeeReasonDetails: string | null;
+  prepMinutes: number;
+  notes: string | null;
+  status: "PENDING" | "ASSIGNED" | "PICKED_UP" | "DELIVERED";
+  isReady: boolean;
+  createdAt: string;
+  updatedAt: string;
+  courier: {
+    id: number;
+    name: string;
+  } | null;
+};
+
+export async function getBusinessOrders(): Promise<BusinessOrder[]> {
+  const response = await fetch("/orders/business/mine", {
+    credentials: "include",
+  });
+
+  return readOrderResponse<BusinessOrder[]>(
+    response,
+    "Failed to load business orders"
+  );
+}

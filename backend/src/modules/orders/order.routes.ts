@@ -8,6 +8,7 @@ import {
   getMyOrdersController,
   pickupOrderController,
   deliverOrderController,
+  getBusinessOrdersController,
 } from "./order.controller.js";
 
 import {
@@ -55,4 +56,11 @@ router.patch(
   deliverOrderController
 );
 
+
+// Business views only its own orders
+router.get(
+  "/business/mine",
+  requireBusiness,
+  getBusinessOrdersController
+);
 export default router;

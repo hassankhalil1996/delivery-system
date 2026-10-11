@@ -1,6 +1,9 @@
 
+import { useState } from "react";
+
 import OrderCreateForm from "./OrderCreateForm";
 import DeliveryPrices from "./DeliveryPrices";
+import BusinessOrders from "./BusinessOrders";
 
 type BusinessDashboardProps = {
   name: string;
@@ -11,6 +14,12 @@ export default function BusinessDashboard({
   name,
   onLogout,
 }: BusinessDashboardProps) {
+  const [ordersRefreshKey, setOrdersRefreshKey] = useState(0);
+
+  function handleOrderCreated() {
+    setOrdersRefreshKey((current) => current + 1);
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -18,7 +27,10 @@ export default function BusinessDashboard({
 
         <div className="header-actions">
           <span>Business Dashboard</span>
-          <button onClick={onLogout}>Logout</button>
+
+          <button type="button" onClick={onLogout}>
+            Logout
+          </button>
         </div>
       </header>
 
@@ -27,8 +39,10 @@ export default function BusinessDashboard({
         <p>Create and manage your delivery orders.</p>
 
         <DeliveryPrices />
-        
-        <OrderCreateForm />
+
+        <OrderCreateForm onOrderCreated={handleOrderCreated} />
+
+        <BusinessOrders refreshKey={ordersRefreshKey} />
       </main>
     </div>
   );

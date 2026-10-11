@@ -15,7 +15,13 @@ import { formatPricingReason } from "./DeliveryPrices";
 
 import "./OrderCreateForm.css";
 
-export default function OrderCreateForm() {
+type OrderCreateFormProps = {
+  onOrderCreated?: () => void;
+};
+
+export default function OrderCreateForm({
+  onOrderCreated,
+}: OrderCreateFormProps) {
   const [customerName, setCustomerName] = useState("");
   const [customerPhone, setCustomerPhone] = useState("");
   const [area, setArea] = useState<DeliveryArea | "">("");
@@ -89,6 +95,9 @@ export default function OrderCreateForm() {
       setSuccess(
         `Order #${order.id} created successfully! Delivery fee: ₪${order.deliveryFee}`
       );
+
+      // Notify the dashboard to refresh Business Orders
+      onOrderCreated?.();
 
       setCustomerName("");
       setCustomerPhone("");

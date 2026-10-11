@@ -10,6 +10,7 @@ import {
   pickupOrder,
   deliverOrder,
   InvalidOrderTransitionError,
+  getBusinessOrders,
 } from "./order.service.js";
 
 import { getCurrentUser } from "../auth/auth.service.js";
@@ -297,6 +298,40 @@ export async function deliverOrderController(
     console.error("Failed to deliver order:", error);
     res.status(500).json({
       error: "Failed to mark order delivered",
+    });
+  }
+}
+
+
+export async function getBusinessOrdersController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const user = await getCurrentUser(req);
+
+    if (!user) {
+      res.status(401).json({
+        error: "Not authenticated",
+      });
+      return; 
+    }
+
+    if (user.role !== "BUSINESS") {
+      res.status(403).json({
+        error: "Business access required",
+      });
+      return;
+    }
+
+    const orders = await getBusinessOrders(user.id);
+
+    res.status(200).json(orders);
+  } catch (error) {
+    console.error("Failed to fetch business orders:", error);
+
+    res.status(500).json({
+      error: "Failed to fetch business orders",
     });
   }
 }
