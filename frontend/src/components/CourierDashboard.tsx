@@ -1,10 +1,11 @@
-
 import { useCallback, useEffect, useState } from "react";
 
 import {
   getAvailableOrders,
   getMyDeliveries,
   acceptDelivery,
+  pickupDelivery,
+  completeDelivery,
   type AvailableOrder,
   type CourierOrder,
 } from "../api/order.api";
@@ -23,13 +24,17 @@ type CourierDashboardProps = {
 type DeliveryCardProps = {
   order: AvailableOrder | CourierOrder;
   onAccept?: (id: number) => void;
-  accepting?: boolean;
+  onPickup?: (id: number) => void;
+  onDeliver?: (id: number) => void;
+  busy: boolean;
 };
 
 function DeliveryCard({
   order,
   onAccept,
-  accepting = false,
+  onPickup,
+  onDeliver,
+  busy,
 }: DeliveryCardProps) {
   const areaName =
     order.area === "BUEINA"
@@ -38,12 +43,17 @@ function DeliveryCard({
         ? "Nujeidat"
         : order.area;
 
+  const isAvailable = onAccept !== undefined;
+
   return (
     <article className="delivery-card">
       <div className="delivery-card-header">
         <h4>Order #{order.id}</h4>
-        <span className="delivery-status">
-          {onAccept ? "AVAILABLE" : "ASSIGNED"}
+
+        <span
+          className={`delivery-status status-${order.status.toLowerCase()}`}
+        >
+          {order.status.replaceAll("_", " ")}
         </span>
       </div>
 
@@ -102,15 +112,47 @@ function DeliveryCard({
         )}
       </div>
 
-      {onAccept && (
+      {isAvailable && (
         <button
           type="button"
           className="accept-delivery-button"
-          disabled={accepting}
+          disabled={busy}
           onClick={() => onAccept(order.id)}
         >
-          {accepting ? "Accepting..." : "Accept Delivery"}
+          {busy ? "Please wait..." : "Accept Delivery"}
         </button>
+      )}
+
+      {!isAvailable &&
+        order.status === "ASSIGNED" &&
+        onPickup && (
+          <button
+            type="button"
+            className="pickup-delivery-button"
+            disabled={busy}
+            onClick={() => onPickup(order.id)}
+          >
+            {busy ? "Please wait..." : "Confirm Pickup"}
+          </button>
+        )}
+
+      {!isAvailable &&
+        order.status === "PICKED_UP" &&
+        onDeliver && (
+          <button
+            type="button"
+            className="complete-delivery-button"
+            disabled={busy}
+            onClick={() => onDeliver(order.id)}
+          >
+            {busy ? "Please wait..." : "Mark Delivered"}
+          </button>
+        )}
+
+      {!isAvailable && order.status === "DELIVERED" && (
+        <p className="delivery-completed">
+          Delivery Completed
+        </p>
       )}
     </article>
   );
@@ -128,7 +170,7 @@ export default function CourierDashboard({
 
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [acceptingId, setAcceptingId] = useState<number | null>(null);
+  const [busyId, setBusyId] = useState<number | null>(null);
 
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
@@ -178,6 +220,8 @@ export default function CourierDashboard({
   }, []);
 
   async function handleRefresh() {
+    if (busyId !== null || refreshing) return;
+
     setRefreshing(true);
     setError("");
     setSuccess("");
@@ -196,16 +240,15 @@ export default function CourierDashboard({
   }
 
   async function handleAccept(orderId: number) {
-    if (acceptingId !== null) return;
+    if (busyId !== null || refreshing) return;
 
-    setAcceptingId(orderId);
+    setBusyId(orderId);
     setError("");
     setSuccess("");
 
     try {
       const accepted = await acceptDelivery(orderId);
 
-      // Update the UI immediately after successful acceptance.
       setAvailableOrders((current) =>
         current.filter((order) => order.id !== orderId)
       );
@@ -226,14 +269,81 @@ export default function CourierDashboard({
           : "Failed to accept delivery"
       );
 
-      // Refresh because another courier may have accepted it.
       try {
         await loadOrders();
       } catch {
-        // Keep the original acceptance error visible.
+        // Keep the original error visible.
       }
     } finally {
-      setAcceptingId(null);
+      setBusyId(null);
+    }
+  }
+
+  async function handlePickup(orderId: number) {
+    if (busyId !== null || refreshing) return;
+
+    setBusyId(orderId);
+    setError("");
+    setSuccess("");
+
+    try {
+      const updated = await pickupDelivery(orderId);
+
+      setMyOrders((current) =>
+        current.map((order) =>
+          order.id === orderId ? updated : order
+        )
+      );
+
+      setSuccess(`Order #${orderId} picked up successfully.`);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to confirm pickup"
+      );
+
+      try {
+        await loadOrders();
+      } catch {
+        // Keep the original error visible.
+      }
+    } finally {
+      setBusyId(null);
+    }
+  }
+
+  async function handleDeliver(orderId: number) {
+    if (busyId !== null || refreshing) return;
+
+    setBusyId(orderId);
+    setError("");
+    setSuccess("");
+
+    try {
+      const updated = await completeDelivery(orderId);
+
+      setMyOrders((current) =>
+        current.map((order) =>
+          order.id === orderId ? updated : order
+        )
+      );
+
+      setSuccess(`Order #${orderId} delivered successfully.`);
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to complete delivery"
+      );
+
+      try {
+        await loadOrders();
+      } catch {
+        // Keep the original error visible.
+      }
+    } finally {
+      setBusyId(null);
     }
   }
 
@@ -275,7 +385,7 @@ export default function CourierDashboard({
               type="button"
               className="refresh-button"
               onClick={() => void handleRefresh()}
-              disabled={loading || refreshing || acceptingId !== null}
+              disabled={loading || refreshing || busyId !== null}
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
@@ -292,7 +402,7 @@ export default function CourierDashboard({
                   key={order.id}
                   order={order}
                   onAccept={(id) => void handleAccept(id)}
-                  accepting={acceptingId !== null}
+                  busy={busyId !== null || refreshing}
                 />
               ))}
             </div>
@@ -314,6 +424,9 @@ export default function CourierDashboard({
                 <DeliveryCard
                   key={order.id}
                   order={order}
+                  onPickup={(id) => void handlePickup(id)}
+                  onDeliver={(id) => void handleDeliver(id)}
+                  busy={busyId !== null || refreshing}
                 />
               ))}
             </div>

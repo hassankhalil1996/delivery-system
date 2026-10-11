@@ -1,3 +1,4 @@
+
 import { Router } from "express";
 
 import {
@@ -5,6 +6,8 @@ import {
   getAvailableOrdersController,
   acceptOrderController,
   getMyOrdersController,
+  pickupOrderController,
+  deliverOrderController,
 } from "./order.controller.js";
 
 import {
@@ -14,28 +17,42 @@ import {
 
 const router = Router();
 
-// Business creates a delivery order
+// Business creates an order
 router.post("/", requireBusiness, postOrder);
 
-// Courier views pending, unassigned deliveries
+// Courier sees available orders
 router.get(
   "/available",
   requireCourier,
   getAvailableOrdersController
 );
 
-// Courier views their assigned deliveries
+// Courier sees their orders
 router.get(
   "/mine",
   requireCourier,
   getMyOrdersController
 );
 
-// Courier accepts an available delivery
+// PENDING -> ASSIGNED
 router.patch(
   "/:orderId/accept",
   requireCourier,
   acceptOrderController
+);
+
+// ASSIGNED -> PICKED_UP
+router.patch(
+  "/:orderId/pickup",
+  requireCourier,
+  pickupOrderController
+);
+
+// PICKED_UP -> DELIVERED
+router.patch(
+  "/:orderId/deliver",
+  requireCourier,
+  deliverOrderController
 );
 
 export default router;

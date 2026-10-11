@@ -1,4 +1,3 @@
-
 export type DeliveryArea = "BUEINA" | "NUJEIDAT";
 
 export type CreateOrderInput = {
@@ -121,5 +120,34 @@ export async function getMyDeliveries(): Promise<CourierOrder[]> {
   return readOrderResponse<CourierOrder[]>(
     response,
     "Failed to load my deliveries"
+  );
+}
+
+
+export async function pickupDelivery(
+  orderId: number
+): Promise<CourierOrder> {
+  const response = await fetch(`/orders/${orderId}/pickup`, {
+    method: "PATCH",
+    credentials: "include",
+  });
+
+  return readOrderResponse<CourierOrder>(
+    response,
+    "Failed to confirm pickup"
+  );
+}
+
+export async function completeDelivery(
+  orderId: number
+): Promise<CourierOrder> {
+  const response = await fetch(`/orders/${orderId}/deliver`, {
+    method: "PATCH",
+    credentials: "include",
+  });
+
+  return readOrderResponse<CourierOrder>(
+    response,
+    "Failed to complete delivery"
   );
 }

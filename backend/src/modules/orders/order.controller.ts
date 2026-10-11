@@ -1,4 +1,3 @@
-
 import type { Request, Response } from "express";
 
 import {
@@ -7,7 +6,10 @@ import {
   PricingNotConfiguredError,
   acceptOrder,
   getCourierOrders,
-  OrderNotAvailableError
+  OrderNotAvailableError,
+  pickupOrder,
+  deliverOrder,
+  InvalidOrderTransitionError,
 } from "./order.service.js";
 
 import { getCurrentUser } from "../auth/auth.service.js";
@@ -191,6 +193,110 @@ export async function getMyOrdersController(
 
     res.status(500).json({
       error: "Failed to fetch my deliveries",
+    });
+  }
+}
+
+
+
+export async function pickupOrderController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const user = await getCurrentUser(req);
+
+    if (!user) {
+      res.status(401).json({
+        error: "Not authenticated",
+      });
+      return;
+    }
+
+    if (user.role !== "COURIER") {
+      res.status(403).json({
+        error: "Courier access required",
+      });
+      return;
+    }
+
+    const orderId = Number(req.params.orderId);
+
+    if (
+      !Number.isSafeInteger(orderId) ||
+      orderId <= 0
+    ) {
+      res.status(400).json({
+        error: "Invalid order ID",
+      });
+      return;
+    }
+
+    const order = await pickupOrder(orderId, user.id);
+
+    res.status(200).json(order);
+  } catch (error) {
+    if (error instanceof InvalidOrderTransitionError) {
+      res.status(409).json({
+        error: error.message,
+      });
+      return;
+    }
+
+    console.error("Failed to pick up order:", error);
+    res.status(500).json({
+      error: "Failed to confirm pickup",
+    });
+  }
+}
+
+export async function deliverOrderController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const user = await getCurrentUser(req);
+
+    if (!user) {
+      res.status(401).json({
+        error: "Not authenticated",
+      });
+      return;
+    }
+
+    if (user.role !== "COURIER") {
+      res.status(403).json({
+        error: "Courier access required",
+      });
+      return;
+    }
+
+    const orderId = Number(req.params.orderId);
+
+    if (
+      !Number.isSafeInteger(orderId) ||
+      orderId <= 0
+    ) {
+      res.status(400).json({
+        error: "Invalid order ID",
+      });
+      return;
+    }
+
+    const order = await deliverOrder(orderId, user.id);
+
+    res.status(200).json(order);
+  } catch (error) {
+    if (error instanceof InvalidOrderTransitionError) {
+      res.status(409).json({
+        error: error.message,
+      });
+      return;
+    }
+
+    console.error("Failed to deliver order:", error);
+    res.status(500).json({
+      error: "Failed to mark order delivered",
     });
   }
 }

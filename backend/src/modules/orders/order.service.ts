@@ -1,4 +1,3 @@
-
 import { prisma } from "../../lib/prisma.js";
 import { isValidArea } from "../pricing/pricing.service.js";
 
@@ -94,11 +93,11 @@ export class OrderNotAvailableError extends Error {
   }
 }
 
+
 export async function acceptOrder(
   orderId: number,
   courierId: number
 ) {
-  // Atomic claim: only one courier can win.
   const result = await prisma.order.updateMany({
     where: {
       id: orderId,
@@ -107,6 +106,7 @@ export async function acceptOrder(
     },
     data: {
       courierId,
+      status: "ASSIGNED",
     },
   });
 
@@ -127,6 +127,7 @@ export async function acceptOrder(
   });
 }
 
+
 export async function getCourierOrders(courierId: number) {
   return prisma.order.findMany({
     where: {
@@ -142,6 +143,81 @@ export async function getCourierOrders(courierId: number) {
     },
     orderBy: {
       createdAt: "desc",
+    },
+  });
+}
+
+
+
+export class InvalidOrderTransitionError extends Error {
+  constructor() {
+    super(
+      "Order status cannot be changed, or this order is not assigned to you"
+    );
+    this.name = "InvalidOrderTransitionError";
+  }
+}
+
+export async function pickupOrder(
+  orderId: number,
+  courierId: number
+) {
+  const result = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      courierId,
+      status: "ASSIGNED",
+    },
+    data: {
+      status: "PICKED_UP",
+    },
+  });
+
+  if (result.count !== 1) {
+    throw new InvalidOrderTransitionError();
+  }
+
+  return prisma.order.findUniqueOrThrow({
+    where: { id: orderId },
+    include: {
+      business: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+}
+
+export async function deliverOrder(
+  orderId: number,
+  courierId: number
+) {
+  const result = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      courierId,
+      status: "PICKED_UP",
+    },
+    data: {
+      status: "DELIVERED",
+    },
+  });
+
+  if (result.count !== 1) {
+    throw new InvalidOrderTransitionError();
+  }
+
+  return prisma.order.findUniqueOrThrow({
+    where: { id: orderId },
+    include: {
+      business: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
     },
   });
 }

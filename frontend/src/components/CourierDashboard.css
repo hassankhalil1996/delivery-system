@@ -299,7 +299,7 @@
   width: 100%;
   margin-top: 18px;
   padding: 13px 18px;
-  background: #16a34a;
+  background: #b6c90d;
   color: #ffffff;
   border: none;
   border-radius: 10px;
@@ -345,4 +345,83 @@
   border-radius: 10px;
   color: #166534;
   font-weight: 600;
+}
+
+
+/* Pickup button */
+
+.courier-dashboard .pickup-delivery-button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 18px;
+  background: #2563eb;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.courier-dashboard .pickup-delivery-button:hover:not(:disabled) {
+  background: #1d4ed8;
+}
+
+/* Complete delivery button */
+
+.courier-dashboard .complete-delivery-button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 18px;
+  background: #16a34a;
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.courier-dashboard .complete-delivery-button:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.courier-dashboard .pickup-delivery-button:disabled,
+.courier-dashboard .complete-delivery-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* Status labels */
+
+.courier-dashboard .delivery-status.status-pending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.courier-dashboard .delivery-status.status-assigned {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.courier-dashboard .delivery-status.status-picked_up {
+  background: #ede9fe;
+  color: #5b21b6;
+}
+
+.courier-dashboard .delivery-status.status-delivered {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* Completed deliveries */
+
+.courier-dashboard .delivery-completed {
+  margin-top: 18px;
+  padding: 12px;
+  text-align: center;
+  border-radius: 10px;
+  background: #f0fdf4;
+  color: #166534;
+  font-weight: 700;
 }

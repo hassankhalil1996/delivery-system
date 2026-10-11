@@ -45,7 +45,7 @@ model Courier {
 
 enum OrderStatus {
   PENDING
-  ACCEPTED
+  ASSIGNED
   REJECTED
   PICKED_UP
   DELIVERED
