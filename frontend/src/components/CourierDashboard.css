@@ -425,3 +425,36 @@
   color: #166534;
   font-weight: 700;
 }
+
+
+/* Estimated pickup countdown */
+
+.pickup-countdown {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  padding: 12px 15px;
+  margin: 12px 0;
+  border-radius: 10px;
+}
+
+.pickup-countdown-label {
+  font-size: 12px;
+  font-weight: 500;
+  opacity: 0.8;
+}
+
+.pickup-countdown strong {
+  font-size: 19px;
+  font-weight: 700;
+}
+
+.pickup-upcoming {
+  background-color: #dcfce7;
+  color: #166534;
+}
+
+.pickup-overdue {
+  background-color: #fee2e2;
+  color: #b91c1c;
+}

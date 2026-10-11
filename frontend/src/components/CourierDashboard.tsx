@@ -1,3 +1,4 @@
+
 import { useCallback, useEffect, useState } from "react";
 
 import {
@@ -21,13 +22,87 @@ type CourierDashboardProps = {
   onLogout: () => void;
 };
 
+type PickupOrder = AvailableOrder | CourierOrder;
+
 type DeliveryCardProps = {
-  order: AvailableOrder | CourierOrder;
+  order: PickupOrder;
   onAccept?: (id: number) => void;
   onPickup?: (id: number) => void;
   onDeliver?: (id: number) => void;
   busy: boolean;
+  now: number;
 };
+
+// Estimated pickup = order creation + preparation time.
+function getPickupTime(order: PickupOrder): number {
+  return (
+    new Date(order.createdAt).getTime() +
+    order.prepMinutes * 60_000
+  );
+}
+
+function formatPickupTime(order: PickupOrder): string {
+  return new Date(getPickupTime(order)).toLocaleTimeString(
+    "en-GB",
+    {
+      hour: "2-digit",
+      minute: "2-digit",
+    }
+  );
+}
+
+function formatPickupCountdown(
+  order: PickupOrder,
+  now: number
+): string {
+  const remainingMs = getPickupTime(order) - now;
+
+  if (remainingMs <= 0) {
+    const lateMinutes = Math.floor(-remainingMs / 60_000);
+
+    return lateMinutes < 1
+      ? "Pickup time reached"
+      : `${lateMinutes} min overdue`;
+  }
+
+  const minutes = Math.ceil(remainingMs / 60_000);
+
+  if (minutes >= 60) {
+    const hours = Math.floor(minutes / 60);
+    const remainingMinutes = minutes % 60;
+
+    return `${hours}h ${remainingMinutes}m remaining`;
+  }
+
+  return `${minutes} min remaining`;
+}
+
+// Active pickups first, ordered from earliest to latest.
+// Picked-up and delivered orders appear afterward.
+function sortByPickupTime<T extends PickupOrder>(
+  orders: T[]
+): T[] {
+  return [...orders].sort((a, b) => {
+    const aFinished =
+      a.status === "PICKED_UP" || a.status === "DELIVERED";
+
+    const bFinished =
+      b.status === "PICKED_UP" || b.status === "DELIVERED";
+
+    if (aFinished !== bFinished) {
+      return aFinished ? 1 : -1;
+    }
+
+    if (aFinished && bFinished) {
+      return (
+        new Date(b.createdAt).getTime() -
+        new Date(a.createdAt).getTime()
+      );
+    }
+
+    return getPickupTime(a) - getPickupTime(b);
+  });
+}
 
 function DeliveryCard({
   order,
@@ -35,6 +110,7 @@ function DeliveryCard({
   onPickup,
   onDeliver,
   busy,
+  now,
 }: DeliveryCardProps) {
   const areaName =
     order.area === "BUEINA"
@@ -44,6 +120,12 @@ function DeliveryCard({
         : order.area;
 
   const isAvailable = onAccept !== undefined;
+
+  const showCountdown =
+    order.status === "PENDING" ||
+    order.status === "ASSIGNED";
+
+  const isOverdue = now >= getPickupTime(order);
 
   return (
     <article className="delivery-card">
@@ -105,6 +187,30 @@ function DeliveryCard({
           <strong>Preparation:</strong> {order.prepMinutes} min
         </p>
 
+        <p>
+          <strong>Estimated Pickup:</strong>{" "}
+          {formatPickupTime(order)}
+        </p>
+
+        {showCountdown && (
+          <div
+            className={`pickup-countdown ${
+              isOverdue
+                ? "pickup-overdue"
+                : "pickup-upcoming"
+            }`}
+            aria-live="off"
+          >
+            <span className="pickup-countdown-label">
+              Time until pickup
+            </span>
+
+            <strong>
+              {formatPickupCountdown(order, now)}
+            </strong>
+          </div>
+        )}
+
         {order.notes && (
           <p>
             <strong>Notes:</strong> {order.notes}
@@ -112,7 +218,7 @@ function DeliveryCard({
         )}
       </div>
 
-      {isAvailable && (
+      {isAvailable && onAccept && (
         <button
           type="button"
           className="accept-delivery-button"
@@ -175,6 +281,9 @@ export default function CourierDashboard({
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
 
+  // Current time for live pickup countdowns.
+  const [now, setNow] = useState(() => Date.now());
+
   const loadOrders = useCallback(async () => {
     const [available, mine] = await Promise.all([
       getAvailableOrders(),
@@ -219,6 +328,17 @@ export default function CourierDashboard({
     };
   }, []);
 
+  // Update the countdown every 15 seconds.
+  useEffect(() => {
+    const interval = window.setInterval(() => {
+      setNow(Date.now());
+    }, 15_000);
+
+    return () => {
+      window.clearInterval(interval);
+    };
+  }, []);
+
   async function handleRefresh() {
     if (busyId !== null || refreshing) return;
 
@@ -228,6 +348,7 @@ export default function CourierDashboard({
 
     try {
       await loadOrders();
+      setNow(Date.now());
     } catch (err) {
       setError(
         err instanceof Error
@@ -295,7 +416,9 @@ export default function CourierDashboard({
         )
       );
 
-      setSuccess(`Order #${orderId} picked up successfully.`);
+      setSuccess(
+        `Order #${orderId} picked up successfully.`
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -329,7 +452,9 @@ export default function CourierDashboard({
         )
       );
 
-      setSuccess(`Order #${orderId} delivered successfully.`);
+      setSuccess(
+        `Order #${orderId} delivered successfully.`
+      );
     } catch (err) {
       setError(
         err instanceof Error
@@ -347,6 +472,11 @@ export default function CourierDashboard({
     }
   }
 
+  const sortedAvailableOrders =
+    sortByPickupTime(availableOrders);
+
+  const sortedMyOrders = sortByPickupTime(myOrders);
+
   return (
     <div className="courier-dashboard">
       <header className="dashboard-header">
@@ -359,6 +489,7 @@ export default function CourierDashboard({
 
       <main>
         <h2>Welcome, {name}</h2>
+
         <p>View and manage your delivery orders.</p>
 
         <DeliveryPrices />
@@ -385,7 +516,9 @@ export default function CourierDashboard({
               type="button"
               className="refresh-button"
               onClick={() => void handleRefresh()}
-              disabled={loading || refreshing || busyId !== null}
+              disabled={
+                loading || refreshing || busyId !== null
+              }
             >
               {refreshing ? "Refreshing..." : "Refresh"}
             </button>
@@ -397,10 +530,11 @@ export default function CourierDashboard({
             <p>No available deliveries right now.</p>
           ) : (
             <div className="orders-grid">
-              {availableOrders.map((order) => (
+              {sortedAvailableOrders.map((order) => (
                 <DeliveryCard
                   key={order.id}
                   order={order}
+                  now={now}
                   onAccept={(id) => void handleAccept(id)}
                   busy={busyId !== null || refreshing}
                 />
@@ -420,10 +554,11 @@ export default function CourierDashboard({
             <p>You haven't accepted any deliveries yet.</p>
           ) : (
             <div className="orders-grid">
-              {myOrders.map((order) => (
+              {sortedMyOrders.map((order) => (
                 <DeliveryCard
                   key={order.id}
                   order={order}
+                  now={now}
                   onPickup={(id) => void handlePickup(id)}
                   onDeliver={(id) => void handleDeliver(id)}
                   busy={busyId !== null || refreshing}
