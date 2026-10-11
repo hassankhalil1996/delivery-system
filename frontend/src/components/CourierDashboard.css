@@ -1,4 +1,40 @@
 
+/* ================================
+   Courier Dashboard
+================================ */
+
+.courier-dashboard {
+  width: 100%;
+  min-height: 100vh;
+  background: #f8fafc;
+  color: #0f172a;
+}
+
+.courier-dashboard main {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 28px 20px;
+}
+
+.courier-dashboard main > h2 {
+  margin: 0 0 8px;
+  font-size: 26px;
+  color: #0f172a;
+}
+
+.courier-dashboard main > p {
+  margin: 0 0 24px;
+  color: #64748b;
+}
+
+/* ================================
+   Available Orders
+================================ */
+
+.courier-dashboard .available-orders {
+  margin-top: 28px;
+}
+
 .courier-dashboard .orders-heading {
   display: flex;
   align-items: center;
@@ -9,33 +45,61 @@
 
 .courier-dashboard .orders-heading h3 {
   margin: 0;
+  font-size: 21px;
+  color: #0f172a;
 }
 
 .courier-dashboard .refresh-button {
   background: #2563eb;
-  color: white;
+  color: #ffffff;
   border: none;
   border-radius: 8px;
   padding: 10px 16px;
   cursor: pointer;
   font-weight: 600;
+  transition: background 0.2s ease;
 }
 
-.courier-dashboard .refresh-button:hover {
+.courier-dashboard .refresh-button:hover:not(:disabled) {
   background: #1d4ed8;
 }
 
-.courier-dashboard .orders-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 300px), 1fr));
-  gap: 16px;
+.courier-dashboard .refresh-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
+/* ================================
+   Orders Grid
+================================ */
+
+.courier-dashboard .orders-grid {
+  display: grid;
+  grid-template-columns: repeat(
+    auto-fill,
+    minmax(min(100%, 300px), 1fr)
+  );
+  gap: 18px;
+}
+
+/* ================================
+   Order Cards
+================================ */
+
 .courier-dashboard .delivery-card {
-  border: 1px solid #e2e8f0;
-  border-radius: 12px;
-  padding: 20px;
   background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 14px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  transition:
+    box-shadow 0.2s ease,
+    transform 0.2s ease;
+}
+
+.courier-dashboard .delivery-card:hover {
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.08);
+  transform: translateY(-2px);
 }
 
 .courier-dashboard .delivery-card-header {
@@ -43,22 +107,36 @@
   align-items: center;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .courier-dashboard .delivery-card h4 {
   margin: 0;
-  font-size: 18px;
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
 }
 
+/* ================================
+   Order Status
+================================ */
+
 .courier-dashboard .delivery-status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 12px;
+  border-radius: 999px;
   background: #fef3c7;
   color: #92400e;
-  border-radius: 20px;
-  padding: 5px 10px;
   font-size: 12px;
   font-weight: 700;
+  white-space: nowrap;
 }
+
+/* ================================
+   Order Details
+================================ */
 
 .courier-dashboard .delivery-details p {
   margin: 0 0 12px;
@@ -68,6 +146,8 @@
   border-radius: 0;
   text-align: left;
   color: #334155;
+  font-size: 14px;
+  line-height: 1.5;
   overflow-wrap: anywhere;
 }
 
@@ -75,28 +155,194 @@
   margin-bottom: 0;
 }
 
+.courier-dashboard .delivery-details strong {
+  font-weight: 700;
+  color: #1e293b;
+}
+
+/* ================================
+   Delivery Fee Highlight
+================================ */
+
+.courier-dashboard .courier-delivery-fee {
+  margin: 16px 0;
+  padding: 16px;
+  background: #eff6ff;
+  border: 1px solid #bfdbfe;
+  border-radius: 12px;
+}
+
+.courier-dashboard .delivery-details .courier-delivery-fee p {
+  margin: 6px 0;
+  color: #1e40af;
+  font-size: 15px;
+}
+
+.courier-dashboard .courier-delivery-fee strong {
+  color: #1d4ed8;
+  font-weight: 700;
+}
+
+/* ================================
+   Errors
+================================ */
+
 .courier-dashboard .courier-error {
   color: #b91c1c;
   background: #fef2f2;
-  padding: 12px;
-  border-radius: 8px;
+  border: 1px solid #fecaca;
+  padding: 12px 16px;
+  border-radius: 10px;
   margin-bottom: 16px;
   text-align: left;
 }
 
-.courier-delivery-fee {
-  margin: 14px 0;
-  padding: 12px 16px;
-  background: #eff6ff;
-  border: 1px solid #bfdbfe;
-  border-radius: 10px;
+/* ================================
+   Responsive Design
+================================ */
+
+@media (max-width: 600px) {
+  .courier-dashboard main {
+    padding: 20px 14px;
+  }
+
+  .courier-dashboard main > h2 {
+    font-size: 23px;
+  }
+
+  .courier-dashboard .orders-heading {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .courier-dashboard .orders-heading h3 {
+    font-size: 19px;
+  }
+
+  .courier-dashboard .orders-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+  }
+
+  .courier-dashboard .delivery-card {
+    padding: 16px;
+  }
+
+  .courier-dashboard .courier-delivery-fee {
+    padding: 14px;
+  }
 }
 
-.courier-delivery-fee p {
-  margin: 6px 0;
-  color: #1e40af;
+
+/* ================================
+   Dashboard Header & Logout
+================================ */
+
+.courier-dashboard .dashboard-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 32px;
+  background: #ffffff;
+  border-bottom: 1px solid #e2e8f0;
 }
 
-.courier-delivery-fee strong {
+.courier-dashboard .dashboard-header h1 {
+  margin: 0;
+  font-size: 24px;
   font-weight: 700;
+  color: #0f172a;
+}
+
+.courier-dashboard .dashboard-header button {
+  padding: 10px 20px;
+  background: #dc2626;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.courier-dashboard .dashboard-header button:hover {
+  background: #b91c1c;
+}
+
+.courier-dashboard .dashboard-header button:focus-visible {
+  outline: 3px solid #fca5a5;
+  outline-offset: 3px;
+}
+
+@media (max-width: 600px) {
+  .courier-dashboard .dashboard-header {
+    padding: 16px;
+  }
+
+  .courier-dashboard .dashboard-header h1 {
+    font-size: 19px;
+  }
+
+  .courier-dashboard .dashboard-header button {
+    padding: 9px 14px;
+  }
+}
+
+
+/* ================================
+   Accept Delivery Button
+================================ */
+
+.courier-dashboard .accept-delivery-button {
+  width: 100%;
+  margin-top: 18px;
+  padding: 13px 18px;
+  background: #16a34a;
+  color: #ffffff;
+  border: none;
+  border-radius: 10px;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.courier-dashboard .accept-delivery-button:hover:not(:disabled) {
+  background: #15803d;
+}
+
+.courier-dashboard .accept-delivery-button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+/* ================================
+   My Deliveries
+================================ */
+
+.courier-dashboard .my-deliveries {
+  margin-top: 40px;
+  padding-top: 28px;
+  border-top: 1px solid #e2e8f0;
+}
+
+.courier-dashboard .my-deliveries .delivery-status {
+  background: #dcfce7;
+  color: #166534;
+}
+
+/* ================================
+   Success Message
+================================ */
+
+.courier-dashboard .courier-success {
+  padding: 12px 16px;
+  margin: 16px 0;
+  background: #f0fdf4;
+  border: 1px solid #bbf7d0;
+  border-radius: 10px;
+  color: #166534;
+  font-weight: 600;
 }

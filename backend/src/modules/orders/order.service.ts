@@ -85,3 +85,63 @@ export async function getAvailableOrders() {
     },
   });
 }
+
+
+export class OrderNotAvailableError extends Error {
+  constructor() {
+    super("This delivery is no longer available");
+    this.name = "OrderNotAvailableError";
+  }
+}
+
+export async function acceptOrder(
+  orderId: number,
+  courierId: number
+) {
+  // Atomic claim: only one courier can win.
+  const result = await prisma.order.updateMany({
+    where: {
+      id: orderId,
+      status: "PENDING",
+      courierId: null,
+    },
+    data: {
+      courierId,
+    },
+  });
+
+  if (result.count !== 1) {
+    throw new OrderNotAvailableError();
+  }
+
+  return prisma.order.findUniqueOrThrow({
+    where: { id: orderId },
+    include: {
+      business: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+  });
+}
+
+export async function getCourierOrders(courierId: number) {
+  return prisma.order.findMany({
+    where: {
+      courierId,
+    },
+    include: {
+      business: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      createdAt: "desc",
+    },
+  });
+}
