@@ -12,6 +12,8 @@ import {
   type AuthUser,
 } from "./api/auth.api";
 
+import { socket } from "./api/socket";
+
 import "./App.css";
 
 function App() {
@@ -35,9 +37,45 @@ function App() {
     void checkSession();
   }, []);
 
+  // Connect Socket.IO only when authenticated.
+  useEffect(() => {
+    if (!user) {
+      socket.disconnect();
+      return;
+    }
+
+    function handleConnect() {
+      console.log("Socket.IO connected:", socket.id);
+    }
+
+    function handleDisconnect(reason: string) {
+      console.log("Socket.IO disconnected:", reason);
+    }
+
+    function handleConnectError(err: Error) {
+      console.error("Socket.IO connection error:", err.message);
+    }
+
+    socket.on("connect", handleConnect);
+    socket.on("disconnect", handleDisconnect);
+    socket.on("connect_error", handleConnectError);
+
+    socket.connect();
+
+    return () => {
+      socket.off("connect", handleConnect);
+      socket.off("disconnect", handleDisconnect);
+      socket.off("connect_error", handleConnectError);
+      socket.disconnect();
+    };
+  }, [user?.id, user?.role]);
+
   async function handleLogout() {
     try {
       await logout();
+
+      socket.disconnect();
+
       setUser(null);
       setError("");
     } catch {

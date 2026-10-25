@@ -1,5 +1,11 @@
+
 import { prisma } from "../../lib/prisma.js";
 import { isValidArea } from "../pricing/pricing.service.js";
+import { getSocketIO } from "../../socket.js";
+
+// =====================================================
+// TYPES
+// =====================================================
 
 export interface CreateOrderInput {
   businessId: number;
@@ -12,6 +18,10 @@ export interface CreateOrderInput {
   notes?: string;
 }
 
+// =====================================================
+// ERRORS
+// =====================================================
+
 export class PricingNotConfiguredError extends Error {
   constructor() {
     super("Delivery pricing is not configured for this area");
@@ -19,12 +29,66 @@ export class PricingNotConfiguredError extends Error {
   }
 }
 
+export class OrderNotAvailableError extends Error {
+  constructor() {
+    super("This delivery is no longer available");
+    this.name = "OrderNotAvailableError";
+  }
+}
+
+export class InvalidOrderTransitionError extends Error {
+  constructor() {
+    super(
+      "Order status cannot be changed, or this order is not assigned to you"
+    );
+    this.name = "InvalidOrderTransitionError";
+  }
+}
+
+// =====================================================
+// SOCKET.IO NOTIFICATIONS
+// =====================================================
+
+// Notify connected users after an order changes.
+// Send only the order ID. Each client will fetch
+// the updated data through its authenticated API.
+function notifyOrderChanged(
+  orderId: number,
+  businessId: number,
+  courierId?: number | null,
+  notifyAllCouriers = false
+) {
+  try {
+    const io = getSocketIO();
+
+    let notification = io
+      .to(`business:${businessId}`)
+      .to("admins");
+
+    if (notifyAllCouriers) {
+      notification = notification.to("couriers");
+    } else if (courierId != null) {
+      notification = notification.to(`courier:${courierId}`);
+    }
+
+    notification.emit("order:changed", { orderId });
+  } catch (error) {
+    // A notification failure must not undo a successful
+    // database operation.
+    console.error("Socket.IO notification failed:", error);
+  }
+}
+
+// =====================================================
+// CREATE ORDER
+// =====================================================
+
 export async function createOrder(data: CreateOrderInput) {
   if (!isValidArea(data.area)) {
     throw new Error("Invalid delivery area");
   }
 
-  return prisma.$transaction(async (tx) => {
+  const order = await prisma.$transaction(async (tx) => {
     const pricing = await tx.deliveryPricing.findUnique({
       where: { area: data.area },
     });
@@ -49,16 +113,34 @@ export async function createOrder(data: CreateOrderInput) {
       },
     });
   });
+
+  // New orders should appear on every courier dashboard.
+  notifyOrderChanged(
+    order.id,
+    order.businessId,
+    null,
+    true
+  );
+
+  return order;
 }
 
+// =====================================================
+// AVAILABLE ORDERS
+// =====================================================
+
 export async function getAvailableOrders() {
+  const threeDaysAgo = new Date(
+    Date.now() - 3 * 24 * 60 * 60 * 1000
+  );
+
   return prisma.order.findMany({
     where: {
       status: "PENDING",
       courierId: null,
       createdAt: {
-      gte: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000),
-  },
+        gte: threeDaysAgo,
+      },
     },
     select: {
       id: true,
@@ -88,19 +170,16 @@ export async function getAvailableOrders() {
   });
 }
 
-
-export class OrderNotAvailableError extends Error {
-  constructor() {
-    super("This delivery is no longer available");
-    this.name = "OrderNotAvailableError";
-  }
-}
-
+// =====================================================
+// ACCEPT ORDER
+// =====================================================
 
 export async function acceptOrder(
   orderId: number,
   courierId: number
 ) {
+  // Atomic update prevents two couriers from
+  // accepting the same delivery.
   const result = await prisma.order.updateMany({
     where: {
       id: orderId,
@@ -117,7 +196,7 @@ export async function acceptOrder(
     throw new OrderNotAvailableError();
   }
 
-  return prisma.order.findUniqueOrThrow({
+  const order = await prisma.order.findUniqueOrThrow({
     where: { id: orderId },
     include: {
       business: {
@@ -128,8 +207,22 @@ export async function acceptOrder(
       },
     },
   });
+
+  // All couriers refresh their available orders.
+  // The business sees the assigned courier.
+  notifyOrderChanged(
+    order.id,
+    order.businessId,
+    courierId,
+    true
+  );
+
+  return order;
 }
 
+// =====================================================
+// COURIER ORDERS
+// =====================================================
 
 export async function getCourierOrders(courierId: number) {
   const threeDaysAgo = new Date(
@@ -157,16 +250,9 @@ export async function getCourierOrders(courierId: number) {
   });
 }
 
-
-
-export class InvalidOrderTransitionError extends Error {
-  constructor() {
-    super(
-      "Order status cannot be changed, or this order is not assigned to you"
-    );
-    this.name = "InvalidOrderTransitionError";
-  }
-}
+// =====================================================
+// PICK UP ORDER
+// =====================================================
 
 export async function pickupOrder(
   orderId: number,
@@ -187,7 +273,7 @@ export async function pickupOrder(
     throw new InvalidOrderTransitionError();
   }
 
-  return prisma.order.findUniqueOrThrow({
+  const order = await prisma.order.findUniqueOrThrow({
     where: { id: orderId },
     include: {
       business: {
@@ -198,7 +284,20 @@ export async function pickupOrder(
       },
     },
   });
+
+  // Notify the business and assigned courier.
+  notifyOrderChanged(
+    order.id,
+    order.businessId,
+    courierId
+  );
+
+  return order;
 }
+
+// =====================================================
+// DELIVER ORDER
+// =====================================================
 
 export async function deliverOrder(
   orderId: number,
@@ -219,7 +318,7 @@ export async function deliverOrder(
     throw new InvalidOrderTransitionError();
   }
 
-  return prisma.order.findUniqueOrThrow({
+  const order = await prisma.order.findUniqueOrThrow({
     where: { id: orderId },
     include: {
       business: {
@@ -230,8 +329,20 @@ export async function deliverOrder(
       },
     },
   });
+
+  // Notify the business and assigned courier.
+  notifyOrderChanged(
+    order.id,
+    order.businessId,
+    courierId
+  );
+
+  return order;
 }
 
+// =====================================================
+// BUSINESS ORDERS
+// =====================================================
 
 export async function getBusinessOrders(businessId: number) {
   const threeDaysAgo = new Date(

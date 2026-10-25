@@ -8,6 +8,8 @@ import {
 
 import { formatPricingReason } from "./DeliveryPrices";
 
+import { socket } from "../api/socket";
+
 import "./BusinessOrders.css";
 
 type OrderStatus = BusinessOrder["status"];
@@ -81,6 +83,29 @@ export default function BusinessOrders({
     };
   }, [refreshKey]);
 
+
+  // Real-time updates from Socket.IO
+  useEffect(() => {
+    function handleOrderChanged() {
+      void loadOrders().catch((err: unknown) => {
+        console.error("Failed to refresh orders:", err);
+        setError("Failed to update orders automatically.");
+      });
+    }
+
+    socket.on("order:changed", handleOrderChanged);
+    socket.on("connect", handleOrderChanged);
+
+    if (socket.connected) {
+      handleOrderChanged();
+    }
+
+    return () => {
+      socket.off("order:changed", handleOrderChanged);
+      socket.off("connect", handleOrderChanged);
+    };
+  }, [loadOrders]);
+  
   async function handleRefresh() {
     setRefreshing(true);
     setError("");

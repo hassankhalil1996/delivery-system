@@ -1,3 +1,4 @@
+
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
@@ -10,6 +11,13 @@ export default defineConfig({
       "/couriers": "http://localhost:3000",
       "/orders": "http://localhost:3000",
       "/pricing": "http://localhost:3000",
+
+      // Socket.IO: HTTP polling + WebSocket
+      "/socket.io": {
+        target: "http://localhost:3000",
+        ws: true,
+        changeOrigin: true,
+      },
     },
   },
 });

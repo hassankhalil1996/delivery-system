@@ -15,6 +15,8 @@ import DeliveryPrices, {
   formatPricingReason,
 } from "./DeliveryPrices";
 
+import { socket } from "../api/socket";
+
 import "./CourierDashboard.css";
 
 type CourierDashboardProps = {
@@ -325,6 +327,42 @@ export default function CourierDashboard({
 
     return () => {
       active = false;
+    };
+  }, []);
+
+  // Refresh orders when another user changes an order or the socket reconnects.
+  useEffect(() => {
+    let active = true;
+
+    async function refreshFromSocket() {
+      try {
+        const [available, mine] = await Promise.all([
+          getAvailableOrders(),
+          getMyDeliveries(),
+        ]);
+        if (!active) return;
+        setAvailableOrders(available);
+        setMyOrders(mine);
+        setNow(Date.now());
+        setError("");
+      } catch (err) {
+        if (!active) return;
+        console.error("Failed to refresh deliveries:", err);
+        setError("Failed to update deliveries automatically.");
+      }
+    }
+
+    function handleOrderChanged() {
+      void refreshFromSocket();
+    }
+
+    socket.on("order:changed", handleOrderChanged);
+    socket.on("connect", handleOrderChanged);
+
+    return () => {
+      active = false;
+      socket.off("order:changed", handleOrderChanged);
+      socket.off("connect", handleOrderChanged);
     };
   }, []);
 
