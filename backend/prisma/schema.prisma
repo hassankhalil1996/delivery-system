@@ -19,6 +19,8 @@ model Business {
 
   orders       Order[]
   sessions     Session[]
+
+  restaurantOrders RestaurantOrder[]
 }
 
 model Admin {
@@ -105,4 +107,47 @@ model DeliveryPricing {
   reason        String   @default("NORMAL")
   reasonDetails String?
   updatedAt     DateTime @updatedAt
+}
+
+enum RestaurantOrderStatus {
+  PENDING
+  ACCEPTED
+  PREPARING
+  READY
+  REJECTED
+  CANCELED
+}
+
+model RestaurantOrder {
+  id            Int                   @id @default(autoincrement())
+  businessId    Int
+  customerName  String
+  customerPhone String
+  area          String
+  address       String
+  notes         String?
+  status        RestaurantOrderStatus @default(PENDING)
+  foodTotal     Decimal               @db.Decimal(10, 2)
+  prepMinutes   Int?
+  createdAt     DateTime              @default(now())
+  updatedAt     DateTime              @updatedAt
+
+  business      Business              @relation(fields: [businessId], references: [id])
+  items         RestaurantOrderItem[]
+
+  @@index([businessId, status])
+  @@index([createdAt])
+}
+
+model RestaurantOrderItem {
+  id                Int             @id @default(autoincrement())
+  restaurantOrderId Int
+  productId         String
+  productName       String
+  size              String?
+  quantity          Int
+  unitPrice         Decimal         @db.Decimal(10, 2)
+  toppings          Json?
+
+  restaurantOrder   RestaurantOrder @relation(fields: [restaurantOrderId], references: [id], onDelete: Cascade)
 }
