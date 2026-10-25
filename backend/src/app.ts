@@ -9,7 +9,7 @@ import businessRoutes from "./modules/businesses/business.routes.js";
 import orderRoutes from "./modules/orders/order.routes.js";
 import courierRoutes from "./modules/couriers/courier.routes.js";
 import pricingRoutes from "./modules/pricing/pricing.routes.js";
-
+import restaurantOrderRoutes from "./modules/restaurant-orders/restaurant-order.routes.js";
 
 
 
@@ -34,6 +34,7 @@ app.use("/businesses", businessRoutes);
 app.use("/orders", orderRoutes);
 app.use("/couriers", courierRoutes);
 app.use("/pricing", pricingRoutes);
+app.use("/public/restaurant-orders", restaurantOrderRoutes);
 
 
 
