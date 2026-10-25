@@ -21,6 +21,8 @@ model Business {
   sessions     Session[]
 
   restaurantOrders RestaurantOrder[]
+
+  menuItems MenuItem[]
 }
 
 model Admin {
@@ -150,4 +152,45 @@ model RestaurantOrderItem {
   toppings          Json?
 
   restaurantOrder   RestaurantOrder @relation(fields: [restaurantOrderId], references: [id], onDelete: Cascade)
+}
+
+
+model MenuItem {
+  id         Int      @id @default(autoincrement())
+  businessId Int
+  productId  String
+  nameHe     String
+  nameAr     String
+  basePrice  Decimal  @db.Decimal(10, 2)
+  isActive   Boolean  @default(true)
+
+  business   Business  @relation(fields: [businessId], references: [id])
+  sizes      MenuItemSize[]
+  toppings   MenuItemTopping[]
+
+  @@unique([businessId, productId])
+}
+
+model MenuItemSize {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int
+  size       String
+  price      Decimal  @db.Decimal(10, 2)
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, size])
+}
+
+model MenuItemTopping {
+  id         Int      @id @default(autoincrement())
+  menuItemId Int
+  toppingId  String
+  nameHe     String
+  nameAr     String
+  extraPrice Decimal  @db.Decimal(10, 2)
+
+  menuItem   MenuItem @relation(fields: [menuItemId], references: [id], onDelete: Cascade)
+
+  @@unique([menuItemId, toppingId])
 }
