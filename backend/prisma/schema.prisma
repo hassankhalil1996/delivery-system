@@ -131,6 +131,7 @@ model RestaurantOrder {
   status        RestaurantOrderStatus @default(PENDING)
   foodTotal     Decimal               @db.Decimal(10, 2)
   prepMinutes   Int?
+  trackingToken String?               @unique
   createdAt     DateTime              @default(now())
   updatedAt     DateTime              @updatedAt
 

@@ -2,38 +2,53 @@
 import type { Server as HttpServer } from "node:http";
 import type { Request } from "express";
 import { Server } from "socket.io";
-import cookieParser from "cookie-parser";
 
 import { getCurrentUser } from "./modules/auth/auth.service.js";
+import { getRestaurantOrderTracking } from "./modules/restaurant-orders/restaurant-order.service.js";
 
 type AuthenticatedUser = NonNullable<
   Awaited<ReturnType<typeof getCurrentUser>>
 >;
+
+type CustomerTracking = {
+  orderId: number;
+};
 
 let io: Server | null = null;
 
 export function initializeSocket(httpServer: HttpServer): Server {
   io = new Server(httpServer, {
     cors: {
-      origin: process.env.FRONTEND_URL || "http://localhost:5173",
+      origin: [
+        process.env.FRONTEND_URL || "http://localhost:5173",
+        "http://localhost:5174",
+      ],
       credentials: true,
     },
   });
 
-  // Authenticate every Socket.IO connection.
   io.use(async (socket, next) => {
     try {
-      // Read cookies from the Socket.IO handshake.
+      // Customers authenticate using their private tracking token.
+      const trackingToken = socket.handshake.auth?.trackingToken;
+
+      if (typeof trackingToken === "string") {
+        const order = await getRestaurantOrderTracking(trackingToken);
+
+        if (!order) {
+          return next(new Error("Invalid tracking token"));
+        }
+
+        socket.data.customerTracking = {
+          orderId: order.id,
+        } satisfies CustomerTracking;
+
+        return next();
+      }
+
+      // Existing business, courier and admin authentication.
       const cookieHeader = socket.request.headers.cookie ?? "";
 
-      const cookies = cookieParser.JSONCookies(
-        cookieParser.signedCookies(
-          {},
-          "unused"
-        )
-      );
-
-      // Parse the session cookie directly from the header.
       const sessionCookie = cookieHeader
         .split(";")
         .map((part) => part.trim())
@@ -47,12 +62,11 @@ export function initializeSocket(httpServer: HttpServer): Server {
         sessionCookie.slice("session=".length)
       );
 
-      // Reuse existing Express authentication logic.
       const authRequest = {
         cookies: {
-            session: sessionToken,
+          session: sessionToken,
         },
-        } as unknown as Request;
+      } as unknown as Request;
 
       const user = await getCurrentUser(authRequest);
 
@@ -61,7 +75,6 @@ export function initializeSocket(httpServer: HttpServer): Server {
       }
 
       socket.data.user = user;
-
       next();
     } catch (error) {
       console.error("Socket authentication error:", error);
@@ -70,13 +83,23 @@ export function initializeSocket(httpServer: HttpServer): Server {
   });
 
   io.on("connection", (socket) => {
+    const customerTracking = socket.data
+      .customerTracking as CustomerTracking | undefined;
+
+    if (customerTracking) {
+      socket.join(`restaurant-order:${customerTracking.orderId}`);
+
+      console.log(
+        `Customer tracking connected: order ${customerTracking.orderId}`
+      );
+
+      return;
+    }
+
     const user = socket.data.user as AuthenticatedUser;
 
-    console.log(
-      `Socket connected: ${user.role} ${user.id}`
-    );
+    console.log(`Socket connected: ${user.role} ${user.id}`);
 
-    // Join rooms based on the authenticated role.
     if (user.role === "COURIER") {
       socket.join("couriers");
       socket.join(`courier:${user.id}`);

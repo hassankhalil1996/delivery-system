@@ -6,6 +6,8 @@ import {
 } from "./restaurant-order.service.js";
 import { isValidArea } from "../pricing/pricing.service.js";
 
+import { getRestaurantOrderTracking } from "./restaurant-order.service.js";
+
 export async function postRestaurantOrder(
   req: Request,
   res: Response
@@ -63,5 +65,32 @@ export async function postRestaurantOrder(
     res.status(500).json({
       error: "Failed to create restaurant order",
     });
+  }
+}
+
+
+export async function trackRestaurantOrderController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const token = req.params.token;
+
+    if (typeof token !== "string") {
+      res.status(400).json({ error: "Invalid tracking token" });
+      return;
+    }
+
+    const order = await getRestaurantOrderTracking(token);
+
+    if (!order) {
+      res.status(404).json({ error: "Order not found" });
+      return;
+    }
+
+    res.status(200).json(order);
+  } catch (error) {
+    console.error("Failed to track restaurant order:", error);
+    res.status(500).json({ error: "Failed to track order" });
   }
 }

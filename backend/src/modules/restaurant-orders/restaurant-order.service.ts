@@ -1,12 +1,15 @@
 
 import { prisma } from "../../lib/prisma.js";
+import { randomBytes } from "node:crypto";
+import { getSocketIO } from "../../socket.js";
 
-export async function getRestaurantOrders(
-  businessId: number
-) {
+export async function getRestaurantOrders(businessId: number) {
   return prisma.restaurantOrder.findMany({
     where: {
       businessId,
+    },
+    omit: {
+      trackingToken: true,
     },
     include: {
       items: true,
@@ -25,6 +28,9 @@ export async function getRestaurantOrderById(
     where: {
       id: orderId,
       businessId,
+    },
+    omit: {
+      trackingToken: true,
     },
     include: {
       items: true,
@@ -189,6 +195,7 @@ export async function createRestaurantOrder(
 
   return prisma.restaurantOrder.create({
     data: {
+      trackingToken: randomBytes(32).toString("hex"),
       businessId: input.businessId,
       customerName: input.customerName.trim(),
       customerPhone: input.customerPhone.trim(),
@@ -240,7 +247,17 @@ export async function acceptRestaurantOrder(
     );
   }
 
-  return getRestaurantOrderById(orderId, businessId);
+  const order = await getRestaurantOrderById(orderId, businessId);
+
+  getSocketIO()
+    .to(`restaurant-order:${orderId}`)
+    .emit("restaurant-order:updated", {
+      id: orderId,
+      status: "ACCEPTED",
+      prepMinutes,
+    });
+
+  return order;
 }
 
 export async function rejectRestaurantOrder(
@@ -264,5 +281,32 @@ export async function rejectRestaurantOrder(
     );
   }
 
-  return getRestaurantOrderById(orderId, businessId);
+  const order = await getRestaurantOrderById(orderId, businessId);
+
+  getSocketIO()
+    .to(`restaurant-order:${orderId}`)
+    .emit("restaurant-order:updated", {
+      id: orderId,
+      status: "REJECTED",
+      prepMinutes: null,
+    });
+
+  return order;
+}
+
+export async function getRestaurantOrderTracking(token: string) {
+  if (!/^[a-f0-9]{64}$/.test(token)) {
+    return null;
+  }
+
+  return prisma.restaurantOrder.findUnique({
+    where: { trackingToken: token },
+    select: {
+      id: true,
+      status: true,
+      prepMinutes: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
 }
