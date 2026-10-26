@@ -205,3 +205,64 @@ export async function createRestaurantOrder(
     },
   });
 }
+
+
+export async function acceptRestaurantOrder(
+  orderId: number,
+  businessId: number,
+  prepMinutes: number
+) {
+  if (
+    !Number.isSafeInteger(prepMinutes) ||
+    prepMinutes < 1 ||
+    prepMinutes > 180
+  ) {
+    throw new InvalidRestaurantOrderError(
+      "Preparation time must be between 1 and 180 minutes"
+    );
+  }
+
+  const result = await prisma.restaurantOrder.updateMany({
+    where: {
+      id: orderId,
+      businessId,
+      status: "PENDING",
+    },
+    data: {
+      status: "ACCEPTED",
+      prepMinutes,
+    },
+  });
+
+  if (result.count === 0) {
+    throw new InvalidRestaurantOrderError(
+      "Order not found or no longer pending"
+    );
+  }
+
+  return getRestaurantOrderById(orderId, businessId);
+}
+
+export async function rejectRestaurantOrder(
+  orderId: number,
+  businessId: number
+) {
+  const result = await prisma.restaurantOrder.updateMany({
+    where: {
+      id: orderId,
+      businessId,
+      status: "PENDING",
+    },
+    data: {
+      status: "REJECTED",
+    },
+  });
+
+  if (result.count === 0) {
+    throw new InvalidRestaurantOrderError(
+      "Order not found or no longer pending"
+    );
+  }
+
+  return getRestaurantOrderById(orderId, businessId);
+}
