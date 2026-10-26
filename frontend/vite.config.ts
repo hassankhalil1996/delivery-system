@@ -12,6 +12,8 @@ export default defineConfig({
       "/orders": "http://localhost:3000",
       "/pricing": "http://localhost:3000",
 
+      "/restaurant": "http://localhost:3000",
+
       // Socket.IO: HTTP polling + WebSocket
       "/socket.io": {
         target: "http://localhost:3000",

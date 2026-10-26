@@ -5,6 +5,8 @@ import OrderCreateForm from "./OrderCreateForm";
 import DeliveryPrices from "./DeliveryPrices";
 import BusinessOrders from "./BusinessOrders";
 
+import RestaurantOrders from "./RestaurantOrders";
+
 type BusinessDashboardProps = {
   name: string;
   onLogout: () => void;
@@ -37,6 +39,8 @@ export default function BusinessDashboard({
       <main>
         <h2>Welcome to {name}</h2>
         <p>Create and manage your delivery orders.</p>
+
+        <RestaurantOrders />
 
         <DeliveryPrices />
 
