@@ -229,6 +229,10 @@ export async function acceptRestaurantOrder(
     );
   }
 
+  const estimatedReadyAt = new Date(
+    Date.now() + prepMinutes * 60_000
+  );
+
   const result = await prisma.restaurantOrder.updateMany({
     where: {
       id: orderId,
@@ -238,6 +242,7 @@ export async function acceptRestaurantOrder(
     data: {
       status: "ACCEPTED",
       prepMinutes,
+      estimatedReadyAt,
     },
   });
 
@@ -255,6 +260,79 @@ export async function acceptRestaurantOrder(
       id: orderId,
       status: "ACCEPTED",
       prepMinutes,
+      estimatedReadyAt: order?.estimatedReadyAt,
+    });
+
+  return order;
+}
+
+export async function startPreparingRestaurantOrder(
+  orderId: number,
+  businessId: number
+) {
+  const result = await prisma.restaurantOrder.updateMany({
+    where: {
+      id: orderId,
+      businessId,
+      status: "ACCEPTED",
+    },
+    data: {
+      status: "PREPARING",
+    },
+  });
+
+  if (result.count === 0) {
+    throw new InvalidRestaurantOrderError(
+      "Order not found or not accepted"
+    );
+  }
+
+  const order = await getRestaurantOrderById(orderId, businessId);
+
+  getSocketIO()
+    .to(`restaurant-order:${orderId}`)
+    .emit("restaurant-order:updated", {
+      id: orderId,
+      status: "PREPARING",
+      prepMinutes: order?.prepMinutes,
+      estimatedReadyAt: order?.estimatedReadyAt,
+    });
+
+  return order;
+}
+
+export async function markRestaurantOrderReady(
+  orderId: number,
+  businessId: number
+) {
+  const result = await prisma.restaurantOrder.updateMany({
+    where: {
+      id: orderId,
+      businessId,
+      status: {
+        in: ["ACCEPTED", "PREPARING"],
+      },
+    },
+    data: {
+      status: "READY",
+    },
+  });
+
+  if (result.count === 0) {
+    throw new InvalidRestaurantOrderError(
+      "Order not found or cannot be marked ready"
+    );
+  }
+
+  const order = await getRestaurantOrderById(orderId, businessId);
+
+  getSocketIO()
+    .to(`restaurant-order:${orderId}`)
+    .emit("restaurant-order:updated", {
+      id: orderId,
+      status: "READY",
+      prepMinutes: order?.prepMinutes,
+      estimatedReadyAt: order?.estimatedReadyAt,
     });
 
   return order;
@@ -289,22 +367,28 @@ export async function rejectRestaurantOrder(
       id: orderId,
       status: "REJECTED",
       prepMinutes: null,
+      estimatedReadyAt: null,
     });
 
   return order;
 }
 
-export async function getRestaurantOrderTracking(token: string) {
+export async function getRestaurantOrderTracking(
+  token: string
+) {
   if (!/^[a-f0-9]{64}$/.test(token)) {
     return null;
   }
 
   return prisma.restaurantOrder.findUnique({
-    where: { trackingToken: token },
+    where: {
+      trackingToken: token,
+    },
     select: {
       id: true,
       status: true,
       prepMinutes: true,
+      estimatedReadyAt: true,
       createdAt: true,
       updatedAt: true,
     },

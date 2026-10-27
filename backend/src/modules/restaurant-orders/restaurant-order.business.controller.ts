@@ -7,6 +7,8 @@ import {
   getRestaurantOrders,
   acceptRestaurantOrder,
   rejectRestaurantOrder,
+  startPreparingRestaurantOrder,
+  markRestaurantOrderReady,
   InvalidRestaurantOrderError,
 } from "./restaurant-order.service.js";
 
@@ -42,7 +44,9 @@ export async function getRestaurantOrdersController(
     const businessId = await getAuthenticatedBusinessId(req);
 
     if (businessId === null) {
-      res.status(403).json({ error: "Business access required" });
+      res.status(403).json({
+        error: "Business access required",
+      });
       return;
     }
 
@@ -50,7 +54,11 @@ export async function getRestaurantOrdersController(
 
     res.status(200).json(orders);
   } catch (error) {
-    console.error("Failed to fetch restaurant orders:", error);
+    console.error(
+      "Failed to fetch restaurant orders:",
+      error
+    );
+
     res.status(500).json({
       error: "Failed to fetch restaurant orders",
     });
@@ -65,7 +73,9 @@ export async function acceptRestaurantOrderController(
     const businessId = await getAuthenticatedBusinessId(req);
 
     if (businessId === null) {
-      res.status(403).json({ error: "Business access required" });
+      res.status(403).json({
+        error: "Business access required",
+      });
       return;
     }
 
@@ -93,13 +103,115 @@ export async function acceptRestaurantOrderController(
     res.status(200).json(order);
   } catch (error) {
     if (error instanceof InvalidRestaurantOrderError) {
-      res.status(409).json({ error: error.message });
+      res.status(409).json({
+        error: error.message,
+      });
       return;
     }
 
-    console.error("Failed to accept restaurant order:", error);
+    console.error(
+      "Failed to accept restaurant order:",
+      error
+    );
+
     res.status(500).json({
       error: "Failed to accept restaurant order",
+    });
+  }
+}
+
+export async function startPreparingRestaurantOrderController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const businessId = await getAuthenticatedBusinessId(req);
+
+    if (businessId === null) {
+      res.status(403).json({
+        error: "Business access required",
+      });
+      return;
+    }
+
+    const orderId = parseOrderId(req);
+
+    if (orderId === null) {
+      res.status(400).json({
+        error: "Invalid order ID",
+      });
+      return;
+    }
+
+    const order = await startPreparingRestaurantOrder(
+      orderId,
+      businessId
+    );
+
+    res.status(200).json(order);
+  } catch (error) {
+    if (error instanceof InvalidRestaurantOrderError) {
+      res.status(409).json({
+        error: error.message,
+      });
+      return;
+    }
+
+    console.error(
+      "Failed to start preparing restaurant order:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to start preparing restaurant order",
+    });
+  }
+}
+
+export async function markRestaurantOrderReadyController(
+  req: Request,
+  res: Response
+) {
+  try {
+    const businessId = await getAuthenticatedBusinessId(req);
+
+    if (businessId === null) {
+      res.status(403).json({
+        error: "Business access required",
+      });
+      return;
+    }
+
+    const orderId = parseOrderId(req);
+
+    if (orderId === null) {
+      res.status(400).json({
+        error: "Invalid order ID",
+      });
+      return;
+    }
+
+    const order = await markRestaurantOrderReady(
+      orderId,
+      businessId
+    );
+
+    res.status(200).json(order);
+  } catch (error) {
+    if (error instanceof InvalidRestaurantOrderError) {
+      res.status(409).json({
+        error: error.message,
+      });
+      return;
+    }
+
+    console.error(
+      "Failed to mark restaurant order ready:",
+      error
+    );
+
+    res.status(500).json({
+      error: "Failed to mark restaurant order ready",
     });
   }
 }
@@ -112,14 +224,18 @@ export async function rejectRestaurantOrderController(
     const businessId = await getAuthenticatedBusinessId(req);
 
     if (businessId === null) {
-      res.status(403).json({ error: "Business access required" });
+      res.status(403).json({
+        error: "Business access required",
+      });
       return;
     }
 
     const orderId = parseOrderId(req);
 
     if (orderId === null) {
-      res.status(400).json({ error: "Invalid order ID" });
+      res.status(400).json({
+        error: "Invalid order ID",
+      });
       return;
     }
 
@@ -131,11 +247,17 @@ export async function rejectRestaurantOrderController(
     res.status(200).json(order);
   } catch (error) {
     if (error instanceof InvalidRestaurantOrderError) {
-      res.status(409).json({ error: error.message });
+      res.status(409).json({
+        error: error.message,
+      });
       return;
     }
 
-    console.error("Failed to reject restaurant order:", error);
+    console.error(
+      "Failed to reject restaurant order:",
+      error
+    );
+
     res.status(500).json({
       error: "Failed to reject restaurant order",
     });

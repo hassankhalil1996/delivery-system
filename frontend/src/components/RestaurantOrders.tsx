@@ -5,6 +5,8 @@ import {
   getRestaurantOrders,
   acceptRestaurantOrder,
   rejectRestaurantOrder,
+  startPreparingRestaurantOrder,
+  markRestaurantOrderReady,
   type RestaurantOrder,
   type RestaurantOrderStatus,
 } from "../api/restaurant-orders.api";
@@ -147,6 +149,46 @@ export default function RestaurantOrders() {
     }
   }
 
+  async function handleStartPreparing(orderId: number) {
+    setBusyOrderId(orderId);
+    setError("");
+
+    try {
+      await startPreparingRestaurantOrder(orderId);
+      await loadOrders();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to start preparing order"
+      );
+    } finally {
+      setBusyOrderId(null);
+    }
+  }
+
+  async function handleMarkReady(orderId: number) {
+    if (!window.confirm(`Mark order #${orderId} as ready?`)) {
+      return;
+    }
+
+    setBusyOrderId(orderId);
+    setError("");
+
+    try {
+      await markRestaurantOrderReady(orderId);
+      await loadOrders();
+    } catch (err) {
+      setError(
+        err instanceof Error
+          ? err.message
+          : "Failed to mark order ready"
+      );
+    } finally {
+      setBusyOrderId(null);
+    }
+  }
+
   const sortedOrders = [...orders].sort((a, b) => {
     if (a.status === "PENDING" && b.status !== "PENDING") return -1;
     if (a.status !== "PENDING" && b.status === "PENDING") return 1;
@@ -212,9 +254,13 @@ export default function RestaurantOrders() {
       ) : (
         <div className="restaurant-orders-grid">
           {filteredOrders.map((order) => (
-            <article className="restaurant-order-card" key={order.id}>
+            <article
+              className="restaurant-order-card"
+              key={order.id}
+            >
               <div className="restaurant-order-card-header">
                 <h3>Order #{order.id}</h3>
+
                 <span
                   className={`restaurant-order-status status-${order.status.toLowerCase()}`}
                 >
@@ -223,13 +269,23 @@ export default function RestaurantOrders() {
               </div>
 
               <div className="restaurant-order-details">
-                <p><strong>Customer:</strong> {order.customerName}</p>
-                <p><strong>Phone:</strong> {order.customerPhone}</p>
-                <p><strong>Area:</strong> {formatArea(order.area)}</p>
-                <p><strong>Address:</strong> {order.address}</p>
+                <p>
+                  <strong>Customer:</strong> {order.customerName}
+                </p>
+                <p>
+                  <strong>Phone:</strong> {order.customerPhone}
+                </p>
+                <p>
+                  <strong>Area:</strong> {formatArea(order.area)}
+                </p>
+                <p>
+                  <strong>Address:</strong> {order.address}
+                </p>
 
                 {order.notes && (
-                  <p><strong>Notes:</strong> {order.notes}</p>
+                  <p>
+                    <strong>Notes:</strong> {order.notes}
+                  </p>
                 )}
 
                 <p>
@@ -242,7 +298,10 @@ export default function RestaurantOrders() {
                 <h4>Ordered Items</h4>
 
                 {order.items.map((item) => (
-                  <div className="restaurant-order-item" key={item.id}>
+                  <div
+                    className="restaurant-order-item"
+                    key={item.id}
+                  >
                     <div>
                       <strong>
                         {item.quantity} × {item.productId}
@@ -273,7 +332,8 @@ export default function RestaurantOrders() {
 
               {order.prepMinutes !== null && (
                 <p>
-                  <strong>Preparation:</strong> {order.prepMinutes} min
+                  <strong>Preparation:</strong>{" "}
+                  {order.prepMinutes} min
                 </p>
               )}
 
@@ -281,6 +341,7 @@ export default function RestaurantOrders() {
                 <div className="restaurant-order-actions">
                   <label>
                     Preparation time
+
                     <select
                       value={prepTimes[order.id] ?? 20}
                       onChange={(event) =>
@@ -304,7 +365,9 @@ export default function RestaurantOrders() {
                       type="button"
                       className="accept"
                       disabled={busyOrderId !== null}
-                      onClick={() => void handleAccept(order.id)}
+                      onClick={() =>
+                        void handleAccept(order.id)
+                      }
                     >
                       {busyOrderId === order.id
                         ? "Processing..."
@@ -315,12 +378,68 @@ export default function RestaurantOrders() {
                       type="button"
                       className="reject"
                       disabled={busyOrderId !== null}
-                      onClick={() => void handleReject(order.id)}
+                      onClick={() =>
+                        void handleReject(order.id)
+                      }
                     >
                       Reject
                     </button>
                   </div>
                 </div>
+              )}
+
+              {order.status === "ACCEPTED" && (
+                <div className="restaurant-order-actions">
+                  <div className="restaurant-order-buttons">
+                    <button
+                      type="button"
+                      className="accept"
+                      disabled={busyOrderId !== null}
+                      onClick={() =>
+                        void handleStartPreparing(order.id)
+                      }
+                    >
+                      {busyOrderId === order.id
+                        ? "Processing..."
+                        : "Start Preparing"}
+                    </button>
+
+                    <button
+                      type="button"
+                      disabled={busyOrderId !== null}
+                      onClick={() =>
+                        void handleMarkReady(order.id)
+                      }
+                    >
+                      Mark Ready
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {order.status === "PREPARING" && (
+                <div className="restaurant-order-actions">
+                  <div className="restaurant-order-buttons">
+                    <button
+                      type="button"
+                      className="accept"
+                      disabled={busyOrderId !== null}
+                      onClick={() =>
+                        void handleMarkReady(order.id)
+                      }
+                    >
+                      {busyOrderId === order.id
+                        ? "Processing..."
+                        : "Mark Ready"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              {order.status === "READY" && (
+                <p>
+                  <strong>Order is ready for pickup.</strong>
+                </p>
               )}
             </article>
           ))}

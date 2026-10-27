@@ -121,22 +121,23 @@ enum RestaurantOrderStatus {
 }
 
 model RestaurantOrder {
-  id            Int                   @id @default(autoincrement())
-  businessId    Int
-  customerName  String
-  customerPhone String
-  area          String
-  address       String
-  notes         String?
-  status        RestaurantOrderStatus @default(PENDING)
-  foodTotal     Decimal               @db.Decimal(10, 2)
-  prepMinutes   Int?
-  trackingToken String?               @unique
-  createdAt     DateTime              @default(now())
-  updatedAt     DateTime              @updatedAt
+  id               Int                   @id @default(autoincrement())
+  businessId       Int
+  customerName     String
+  customerPhone    String
+  area             String
+  address          String
+  notes            String?
+  status           RestaurantOrderStatus @default(PENDING)
+  foodTotal        Decimal               @db.Decimal(10, 2)
+  prepMinutes      Int?
+  estimatedReadyAt DateTime?
+  trackingToken    String?               @unique
+  createdAt        DateTime              @default(now())
+  updatedAt        DateTime              @updatedAt
 
-  business      Business              @relation(fields: [businessId], references: [id])
-  items         RestaurantOrderItem[]
+  business         Business              @relation(fields: [businessId], references: [id])
+  items            RestaurantOrderItem[]
 
   @@index([businessId, status])
   @@index([createdAt])

@@ -28,13 +28,11 @@ export type RestaurantOrder = {
   status: RestaurantOrderStatus;
   foodTotal: string;
   prepMinutes: number | null;
+  estimatedReadyAt: string | null;
   createdAt: string;
   updatedAt: string;
   items: RestaurantOrderItem[];
 };
-
-//const API_URL =
- // import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 async function apiRequest<T>(
   path: string,
@@ -75,6 +73,28 @@ export function acceptRestaurantOrder(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ prepMinutes }),
+    }
+  );
+}
+
+export function startPreparingRestaurantOrder(
+  orderId: number
+): Promise<RestaurantOrder> {
+  return apiRequest<RestaurantOrder>(
+    `/restaurant/orders/${orderId}/preparing`,
+    {
+      method: "PATCH",
+    }
+  );
+}
+
+export function markRestaurantOrderReady(
+  orderId: number
+): Promise<RestaurantOrder> {
+  return apiRequest<RestaurantOrder>(
+    `/restaurant/orders/${orderId}/ready`,
+    {
+      method: "PATCH",
     }
   );
 }
