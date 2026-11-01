@@ -5,7 +5,6 @@ import {
   getRestaurantOrders,
   acceptRestaurantOrder,
   rejectRestaurantOrder,
-  startPreparingRestaurantOrder,
   markRestaurantOrderReady,
   type RestaurantOrder,
   type RestaurantOrderStatus,
@@ -143,24 +142,6 @@ export default function RestaurantOrders() {
     } catch (err) {
       setError(
         err instanceof Error ? err.message : "Failed to reject order"
-      );
-    } finally {
-      setBusyOrderId(null);
-    }
-  }
-
-  async function handleStartPreparing(orderId: number) {
-    setBusyOrderId(orderId);
-    setError("");
-
-    try {
-      await startPreparingRestaurantOrder(orderId);
-      await loadOrders();
-    } catch (err) {
-      setError(
-        err instanceof Error
-          ? err.message
-          : "Failed to start preparing order"
       );
     } finally {
       setBusyOrderId(null);
@@ -396,22 +377,12 @@ export default function RestaurantOrders() {
                       className="accept"
                       disabled={busyOrderId !== null}
                       onClick={() =>
-                        void handleStartPreparing(order.id)
+                        void handleMarkReady(order.id)
                       }
                     >
                       {busyOrderId === order.id
                         ? "Processing..."
-                        : "Start Preparing"}
-                    </button>
-
-                    <button
-                      type="button"
-                      disabled={busyOrderId !== null}
-                      onClick={() =>
-                        void handleMarkReady(order.id)
-                      }
-                    >
-                      Mark Ready
+                        : "Mark Ready"}
                     </button>
                   </div>
                 </div>
