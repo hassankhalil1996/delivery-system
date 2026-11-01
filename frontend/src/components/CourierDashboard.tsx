@@ -188,6 +188,14 @@ function DeliveryCard({
         <p>
           <strong>Preparation:</strong> {order.prepMinutes} min
         </p>
+        
+        {order.status !== "PICKED_UP" &&
+        order.status !== "DELIVERED" && (
+          <p>
+            <strong>Food Status:</strong>{" "}
+            {order.isReady ? "READY FOR PICKUP" : "Preparing"}
+          </p>
+        )}
 
         <p>
           <strong>Estimated Pickup:</strong>{" "}

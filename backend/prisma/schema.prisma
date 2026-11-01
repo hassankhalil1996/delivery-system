@@ -79,6 +79,9 @@ model Order {
   deliveryFeeReason        String  @default("NORMAL")
   deliveryFeeReasonDetails String?
 
+  restaurantOrderId Int?             @unique
+  restaurantOrder   RestaurantOrder? @relation(fields: [restaurantOrderId], references: [id])
+
   @@index([businessId, createdAt])
   @@index([courierId])
   @@index([status])
@@ -138,6 +141,8 @@ model RestaurantOrder {
 
   business         Business              @relation(fields: [businessId], references: [id])
   items            RestaurantOrderItem[]
+
+  deliveryOrder Order?
 
   @@index([businessId, status])
   @@index([createdAt])

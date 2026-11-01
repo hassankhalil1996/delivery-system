@@ -214,6 +214,7 @@ export async function createRestaurantOrder(
 }
 
 
+
 export async function acceptRestaurantOrder(
   orderId: number,
   businessId: number,
@@ -233,38 +234,102 @@ export async function acceptRestaurantOrder(
     Date.now() + prepMinutes * 60_000
   );
 
-  const result = await prisma.restaurantOrder.updateMany({
-    where: {
-      id: orderId,
-      businessId,
-      status: "PENDING",
-    },
-    data: {
-      status: "ACCEPTED",
-      prepMinutes,
-      estimatedReadyAt,
-    },
+  const result = await prisma.$transaction(async (tx) => {
+    const restaurantOrder = await tx.restaurantOrder.findFirst({
+      where: {
+        id: orderId,
+        businessId,
+        status: "PENDING",
+      },
+    });
+
+    if (!restaurantOrder) {
+      throw new InvalidRestaurantOrderError(
+        "Order not found or no longer pending"
+      );
+    }
+
+    const pricing = await tx.deliveryPricing.findUnique({
+      where: { area: restaurantOrder.area },
+    });
+
+    if (!pricing) {
+      throw new InvalidRestaurantOrderError(
+        "Delivery pricing is not configured for this area"
+      );
+    }
+
+    // Claim the pending order before creating a delivery.
+    const updated = await tx.restaurantOrder.updateMany({
+      where: {
+        id: orderId,
+        businessId,
+        status: "PENDING",
+      },
+      data: {
+        status: "ACCEPTED",
+        prepMinutes,
+        estimatedReadyAt,
+      },
+    });
+
+    if (updated.count !== 1) {
+      throw new InvalidRestaurantOrderError(
+        "Order has already been accepted"
+      );
+    }
+
+    const delivery = await tx.order.create({
+      data: {
+        restaurantOrderId: orderId,
+        businessId,
+        customerName: restaurantOrder.customerName,
+        customerPhone: restaurantOrder.customerPhone,
+        area: restaurantOrder.area,
+        address: restaurantOrder.address,
+        orderPrice: restaurantOrder.foodTotal,
+        deliveryFee: pricing.fee,
+        deliveryFeeReason: pricing.reason,
+        deliveryFeeReasonDetails: pricing.reasonDetails,
+        prepMinutes,
+        notes: restaurantOrder.notes,
+      },
+    });
+
+    return { delivery };
   });
 
-  if (result.count === 0) {
-    throw new InvalidRestaurantOrderError(
-      "Order not found or no longer pending"
-    );
+  const order = await getRestaurantOrderById(
+    orderId,
+    businessId
+  );
+
+  // Notify the customer after the transaction commits.
+  try {
+    getSocketIO()
+      .to(`restaurant-order:${orderId}`)
+      .emit("restaurant-order:updated", {
+        id: orderId,
+        status: "ACCEPTED",
+        prepMinutes,
+        estimatedReadyAt,
+      });
+
+    // Notify courier dashboards about the new delivery.
+    getSocketIO()
+      .to("couriers")
+      .to(`business:${businessId}`)
+      .to("admins")
+      .emit("order:changed", {
+        orderId: result.delivery.id,
+      });
+  } catch (error) {
+    console.error("Socket.IO notification failed:", error);
   }
-
-  const order = await getRestaurantOrderById(orderId, businessId);
-
-  getSocketIO()
-    .to(`restaurant-order:${orderId}`)
-    .emit("restaurant-order:updated", {
-      id: orderId,
-      status: "ACCEPTED",
-      prepMinutes,
-      estimatedReadyAt: order?.estimatedReadyAt,
-    });
 
   return order;
 }
+
 
 export async function startPreparingRestaurantOrder(
   orderId: number,
@@ -305,7 +370,9 @@ export async function markRestaurantOrderReady(
   orderId: number,
   businessId: number
 ) {
-  const result = await prisma.restaurantOrder.updateMany({
+  
+  const result = await prisma.$transaction(async (tx) => {
+  const updated = await tx.restaurantOrder.updateMany({
     where: {
       id: orderId,
       businessId,
@@ -317,6 +384,24 @@ export async function markRestaurantOrderReady(
       status: "READY",
     },
   });
+
+  if (updated.count !== 1) {
+    return { count: 0, delivery: null };
+  }
+
+  const delivery = await tx.order.findUnique({
+    where: { restaurantOrderId: orderId },
+  });
+
+  if (delivery) {
+    await tx.order.update({
+      where: { id: delivery.id },
+      data: { isReady: true },
+    });
+  }
+
+  return { count: updated.count, delivery };
+});
 
   if (result.count === 0) {
     throw new InvalidRestaurantOrderError(
@@ -334,6 +419,20 @@ export async function markRestaurantOrderReady(
       prepMinutes: order?.prepMinutes,
       estimatedReadyAt: order?.estimatedReadyAt,
     });
+
+    if (result.delivery) {
+  try {
+    getSocketIO()
+      .to("couriers")
+      .to(`business:${businessId}`)
+      .to("admins")
+      .emit("order:changed", {
+        orderId: result.delivery.id,
+      });
+  } catch (error) {
+    console.error("Courier notification failed:", error);
+  }
+}
 
   return order;
 }
