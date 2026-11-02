@@ -44,6 +44,7 @@ export type CustomerOrderItem = {
   size?: string;
   toppingIds?: string[];
   quantity: number;
+  notes?: string;
 };
 
 export type CreateRestaurantOrderInput = {
@@ -97,6 +98,7 @@ export async function createRestaurantOrder(
       size,
       toppingIds = [],
       quantity,
+      notes,
     } = requestedItem;
 
     if (
@@ -107,7 +109,9 @@ export async function createRestaurantOrder(
       !Array.isArray(toppingIds) ||
       toppingIds.length > 20 ||
       toppingIds.some(id => typeof id !== "string") ||
-      new Set(toppingIds).size !== toppingIds.length
+      new Set(toppingIds).size !== toppingIds.length ||
+      (notes !== undefined &&
+        (typeof notes !== "string" || notes.length > 500))
     ) {
       throw new InvalidRestaurantOrderError(
         "Invalid cart item"
@@ -156,6 +160,63 @@ export async function createRestaurantOrder(
         `Size not supported for ${productId}`
       );
     }
+    
+    if (input.businessId === 9) {
+      const pizzaIds = new Set([
+        "pizza-family",
+        "pizza-small",
+      ]);
+
+      const burgerIds = new Set([
+        "burger-125",
+        "burger-240",
+        "burger-300",
+        "burger-500",
+      ]);
+
+      const burgerRemovalIds = new Set([
+        "no-tomato",
+        "no-lettuce",
+        "no-onion",
+        "no-pickles",
+        "no-sauce",
+        "no-salads",
+      ]);
+
+      const burgerExtraIds = new Set([
+        "cheddar",
+        "fried-mushrooms",
+        "crispy-onion",
+        "chips",
+        "extra-patty",
+      ]);
+
+      if (pizzaIds.has(productId)) {
+        if (toppingIds.length > 8) {
+          throw new InvalidRestaurantOrderError(
+            "Maximum 8 pizza toppings allowed"
+          );
+        }
+      } else if (burgerIds.has(productId)) {
+        const removals = toppingIds.filter((id) =>
+          burgerRemovalIds.has(id)
+        );
+
+        const extras = toppingIds.filter((id) =>
+          burgerExtraIds.has(id)
+        );
+
+        if (removals.length > 6 || extras.length > 6) {
+          throw new InvalidRestaurantOrderError(
+            "Too many burger customizations"
+          );
+        }
+      } else if (toppingIds.length > 0) {
+        throw new InvalidRestaurantOrderError(
+          `Customizations not supported for ${productId}`
+        );
+      }
+    }
 
     const selectedToppings = [];
 
@@ -190,6 +251,7 @@ export async function createRestaurantOrder(
       quantity,
       unitPrice: unitPriceCents / 100,
       toppings: selectedToppings,
+      notes: notes?.trim() || null,
     });
   }
 

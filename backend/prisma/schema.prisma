@@ -157,6 +157,7 @@ model RestaurantOrderItem {
   quantity          Int
   unitPrice         Decimal         @db.Decimal(10, 2)
   toppings          Json?
+  notes             String?
 
   restaurantOrder   RestaurantOrder @relation(fields: [restaurantOrderId], references: [id], onDelete: Cascade)
 }
