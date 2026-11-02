@@ -15,6 +15,7 @@ export type RestaurantOrderItem = {
   quantity: number;
   unitPrice: string;
   toppings: unknown;
+  notes: string | null;
 };
 
 export type RestaurantOrder = {

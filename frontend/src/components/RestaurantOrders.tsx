@@ -164,8 +164,21 @@ export default function RestaurantOrders() {
                   {order.items.map((item) => (
                     <div className="restaurant-order-item" key={item.id}>
                       <div><strong>{item.quantity} × {item.productId}</strong>
-                        {item.size && <p>Size: {formatSize(item.size)}</p>}
-                        {formatToppings(item.toppings) && <p>Toppings: {formatToppings(item.toppings)}</p>}
+                        
+                      {item.size && (
+                        <p>Size: {formatSize(item.size)}</p>
+                      )}
+
+                      {formatToppings(item.toppings) && (
+                        <p>Toppings: {formatToppings(item.toppings)}</p>
+                      )}
+
+                      {item.notes && (
+                        <p>
+                          <strong>Item note:</strong> {item.notes}
+                        </p>
+                      )}
+
                       </div>
                       <strong>₪{(Number(item.unitPrice) * item.quantity).toFixed(2)}</strong>
                     </div>
