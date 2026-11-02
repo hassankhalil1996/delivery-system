@@ -26,13 +26,18 @@ export async function postLogin(req: Request, res: Response) {
       return;
     }
 
+    
     res.cookie("session", result.token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
       expires: result.expiresAt,
       path: "/",
     });
+
 
     res.json({
       message: "Login successful",
@@ -70,12 +75,17 @@ export async function postLogout(req: Request, res: Response) {
   try {
     await logout(req);
 
+    
     res.clearCookie("session", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite:
+        process.env.NODE_ENV === "production"
+          ? "none"
+          : "lax",
       path: "/",
     });
+
 
     res.json({ message: "Logout successful" });
   } catch (error) {

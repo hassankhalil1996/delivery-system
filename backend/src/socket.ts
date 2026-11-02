@@ -18,13 +18,17 @@ let io: Server | null = null;
 
 export function initializeSocket(httpServer: HttpServer): Server {
   io = new Server(httpServer, {
-    cors: {
-      origin: [
-        process.env.FRONTEND_URL || "http://localhost:5173",
-        "http://localhost:5174",
-      ],
-      credentials: true,
-    },
+    
+  cors: {
+    origin: [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      process.env.FRONTEND_URL,
+      process.env.CUSTOMER_FRONTEND_URL,
+    ].filter((origin): origin is string => Boolean(origin)),
+    credentials: true,
+  },
+
   });
 
   io.use(async (socket, next) => {
