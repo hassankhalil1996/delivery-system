@@ -1,3 +1,6 @@
+
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 export type DeliveryArea = "BUEINA" | "NUJEIDAT";
 
 export type CreateOrderInput = {
@@ -24,7 +27,7 @@ export type Order = CreateOrderInput & {
 export async function createOrder(
   input: CreateOrderInput
 ): Promise<Order> {
-  const response = await fetch("/orders", {
+  const response = await fetch(`${API_URL}/orders`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -88,7 +91,7 @@ async function readOrderResponse<T>(
 }
 
 export async function getAvailableOrders(): Promise<AvailableOrder[]> {
-  const response = await fetch("/orders/available", {
+  const response = await fetch(`${API_URL}/orders/available`, {
     credentials: "include",
   });
 
@@ -101,7 +104,7 @@ export async function getAvailableOrders(): Promise<AvailableOrder[]> {
 export async function acceptDelivery(
   orderId: number
 ): Promise<CourierOrder> {
-  const response = await fetch(`/orders/${orderId}/accept`, {
+  const response = await fetch(`${API_URL}/orders/${orderId}/accept`, {
     method: "PATCH",
     credentials: "include",
   });
@@ -113,7 +116,7 @@ export async function acceptDelivery(
 }
 
 export async function getMyDeliveries(): Promise<CourierOrder[]> {
-  const response = await fetch("/orders/mine", {
+  const response = await fetch(`${API_URL}/orders/mine`, {
     credentials: "include",
   });
 
@@ -123,11 +126,10 @@ export async function getMyDeliveries(): Promise<CourierOrder[]> {
   );
 }
 
-
 export async function pickupDelivery(
   orderId: number
 ): Promise<CourierOrder> {
-  const response = await fetch(`/orders/${orderId}/pickup`, {
+  const response = await fetch(`${API_URL}/orders/${orderId}/pickup`, {
     method: "PATCH",
     credentials: "include",
   });
@@ -141,7 +143,7 @@ export async function pickupDelivery(
 export async function completeDelivery(
   orderId: number
 ): Promise<CourierOrder> {
-  const response = await fetch(`/orders/${orderId}/deliver`, {
+  const response = await fetch(`${API_URL}/orders/${orderId}/deliver`, {
     method: "PATCH",
     credentials: "include",
   });
@@ -151,8 +153,6 @@ export async function completeDelivery(
     "Failed to complete delivery"
   );
 }
-
-
 
 export type BusinessOrder = {
   id: number;
@@ -179,7 +179,7 @@ export type BusinessOrder = {
 };
 
 export async function getBusinessOrders(): Promise<BusinessOrder[]> {
-  const response = await fetch("/orders/business/mine", {
+  const response = await fetch(`${API_URL}/orders/business/mine`, {
     credentials: "include",
   });
 

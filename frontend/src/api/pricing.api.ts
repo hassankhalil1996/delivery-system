@@ -1,4 +1,6 @@
 
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 export type DeliveryArea = "BUEINA" | "NUJEIDAT";
 
 export type PricingReason =
@@ -24,7 +26,7 @@ export type UpdatePricingInput = {
 };
 
 export async function getPricing(): Promise<DeliveryPricing[]> {
-  const response = await fetch("/pricing", {
+  const response = await fetch(`${API_URL}/pricing`, {
     credentials: "include",
   });
 
@@ -39,7 +41,7 @@ export async function updatePricing(
   area: DeliveryArea,
   input: UpdatePricingInput
 ): Promise<DeliveryPricing> {
-  const response = await fetch(`/pricing/${area}`, {
+  const response = await fetch(`${API_URL}/pricing/${area}`, {
     method: "PUT",
     headers: {
       "Content-Type": "application/json",

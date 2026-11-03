@@ -1,3 +1,6 @@
+
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 export type Business = {
   id: number;
   name: string;
@@ -15,7 +18,7 @@ export type CreateBusinessInput = {
 export async function createBusiness(
   input: CreateBusinessInput
 ): Promise<Business> {
-  const response = await fetch("/businesses", {
+  const response = await fetch(`${API_URL}/businesses`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

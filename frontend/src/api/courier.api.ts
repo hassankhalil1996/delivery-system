@@ -13,10 +13,12 @@ export type CreateCourierInput = {
   password: string;
 };
 
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 export async function createCourier(
   input: CreateCourierInput
 ): Promise<Courier> {
-  const response = await fetch("/couriers", {
+  const response = await fetch(`${API_URL}/couriers`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",

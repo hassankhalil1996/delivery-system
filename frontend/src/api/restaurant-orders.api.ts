@@ -35,11 +35,13 @@ export type RestaurantOrder = {
   items: RestaurantOrderItem[];
 };
 
+const API_URL = import.meta.env.VITE_API_URL || "";
+
 async function apiRequest<T>(
   path: string,
   options: RequestInit = {}
 ): Promise<T> {
-  const response = await fetch(path, {
+  const response = await fetch(`${API_URL}${path}`, {
     ...options,
     credentials: "include",
     headers: {

@@ -18,8 +18,10 @@ export type AuthUser =
       role: "COURIER";
     };
 
+    const API_URL = import.meta.env.VITE_API_URL || "";
+
 export async function getCurrentUser(): Promise<AuthUser | null> {
-  const response = await fetch("/auth/me", {
+  const response = await fetch(`${API_URL}/auth/me`, {
     credentials: "include",
   });
 
@@ -31,7 +33,7 @@ export async function getCurrentUser(): Promise<AuthUser | null> {
 }
 
 export async function login(username: string, password: string) {
-  const response = await fetch("/auth/login", {
+  const response = await fetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
@@ -44,7 +46,7 @@ export async function login(username: string, password: string) {
 }
 
 export async function logout() {
-  const response = await fetch("/auth/logout", {
+  const response = await fetch(`${API_URL}/auth/logout`, {
     method: "POST",
     credentials: "include",
   });
